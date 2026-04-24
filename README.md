@@ -82,7 +82,7 @@
 
 ---
 
-## Network Topology
+## Network Topology - 진행 중 변경 가능
 
 ### Host Network
 - WiFi NIC: `wlxb0386cf00b2f`
@@ -106,7 +106,7 @@
 
 ---
 
-## OpenStack Stack
+## OpenStack Stack - 진행 중 변경될 수 있음
 
 ### Deployment
 - Kolla-Ansible 21.0.0
