@@ -24,7 +24,7 @@
 
 | Item | Spec |
 |---|---|
-| CPU | 32 cores (KVM supported) |
+| CPU | 16 cores (KVM supported) |
 | RAM | 62GB |
 | Storage | 476GB NVMe SSD |
 
