@@ -20,12 +20,14 @@ resource "openstack_networking_subnet_v2" "int_subnet" {
     start = var.int_net_pool_start
     end   = var.int_net_pool_end
   }
-
-  host_routes {
-    destination_cidr = "10.10.20.0/24"
-    next_hop         = "10.10.10.2"
-  }
 }
+
+resource "openstack_networking_subnet_route_v2" "vxlan_route" {
+  subnet_id        = openstack_networking_subnet_v2.int_subnet.id
+  destination_cidr = "10.10.20.0/24"
+  next_hop         = "10.10.10.2"
+}
+
 
 # ──────────────────────────────────────
 # vxlan-net (internal / vxlan)

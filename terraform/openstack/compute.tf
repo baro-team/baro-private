@@ -63,7 +63,8 @@ resource "openstack_compute_instance_v2" "k3s_master" {
   }
 
   lifecycle {
-    ignore_changes = [block_device]
+    prevent_destroy = true
+    ignore_changes  = [block_device, network, availability_zone]
   }
 }
 
@@ -86,7 +87,8 @@ resource "openstack_compute_instance_v2" "k3s_worker_1" {
   }
 
   lifecycle {
-    ignore_changes = [block_device]
+    prevent_destroy = true
+    ignore_changes  = [block_device, network, availability_zone]
   }
 }
 
@@ -109,7 +111,8 @@ resource "openstack_compute_instance_v2" "k3s_worker_2" {
   }
 
   lifecycle {
-    ignore_changes = [block_device]
+    prevent_destroy = true
+    ignore_changes  = [block_device, network, availability_zone]
   }
 }
 
@@ -132,7 +135,8 @@ resource "openstack_compute_instance_v2" "harbor" {
   }
 
   lifecycle {
-    ignore_changes = [block_device]
+    prevent_destroy = true
+    ignore_changes  = [block_device, network, availability_zone]
   }
 }
 
@@ -155,6 +159,7 @@ resource "openstack_compute_instance_v2" "backup" {
   }
 
   lifecycle {
-    ignore_changes = [block_device]
+    prevent_destroy = true
+    ignore_changes  = [block_device, network, availability_zone]
   }
 }
