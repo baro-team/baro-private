@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.5"
 
   backend "local" {
     path = "/home/baro/terraform-state/openstack/terraform.tfstate"
@@ -14,10 +14,11 @@ terraform {
 }
 
 provider "openstack" {
-  auth_url    = var.auth_url
-  user_name   = var.user_name
-  password    = var.password
-  tenant_name = var.project_name
-  domain_name = var.domain_name
-  region      = var.region
+  auth_url            = var.auth_url
+  user_name           = var.user_name
+  password            = var.password
+  project_name        = var.project_name
+  user_domain_name    = var.user_domain_name
+  project_domain_name = var.project_domain_name
+  region              = var.region
 }
