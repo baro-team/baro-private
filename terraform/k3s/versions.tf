@@ -1,6 +1,10 @@
 terraform {
   required_version = ">= 1.5"
 
+  backend "local" {
+    path = "/home/baro/terraform-state/k3s/terraform.tfstate"
+  }
+
   required_providers {
     helm = {
       source  = "hashicorp/helm"

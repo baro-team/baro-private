@@ -1,0 +1,111 @@
+name: Terraform Plan & Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-production
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      openstack: ${{ steps.filter.outputs.openstack }}
+      k3s: ${{ steps.filter.outputs.k3s }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Path Filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            openstack:
+              - 'terraform/openstack/**'
+            k3s:
+              - 'terraform/k3s/**'
+
+  terraform-openstack:
+    name: OpenStack Terraform
+    needs: detect-changes
+    if: needs.detect-changes.outputs.openstack == 'true'
+    runs-on: [self-hosted, linux, x64, openstack]
+    defaults:
+      run:
+        working-directory: terraform/openstack
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -lock-timeout=5m -out=tfplan -no-color
+        env:
+          TF_VAR_password: ${{ secrets.OPENSTACK_PASSWORD }}
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -input=false -lock-timeout=5m tfplan
+        env:
+          TF_VAR_password: ${{ secrets.OPENSTACK_PASSWORD }}
+
+  terraform-k3s:
+    name: K3s Helm Terraform
+    needs: [detect-changes, terraform-openstack]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.k3s == 'true' &&
+      (needs.terraform-openstack.result == 'success' || needs.terraform-openstack.result == 'skipped')
+    runs-on: [self-hosted, linux, x64, openstack]
+    defaults:
+      run:
+        working-directory: terraform/k3s
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -lock-timeout=5m -out=tfplan -no-color
+        env:
+          TF_VAR_kubeconfig_path: /home/baro/terraform-temp/k3s-kubeconfig.yaml
+          TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          TF_VAR_airflow_db_password: ${{ secrets.AIRFLOW_DB_PASSWORD }}
+          TF_VAR_timescaledb_password: ${{ secrets.TIMESCALEDB_PASSWORD }}
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -input=false -lock-timeout=5m tfplan
+        env:
+          TF_VAR_kubeconfig_path: /home/baro/terraform-temp/k3s-kubeconfig.yaml
+          TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          TF_VAR_airflow_db_password: ${{ secrets.AIRFLOW_DB_PASSWORD }}
+          TF_VAR_timescaledb_password: ${{ secrets.TIMESCALEDB_PASSWORD }}
