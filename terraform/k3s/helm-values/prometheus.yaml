@@ -1,0 +1,39 @@
+grafana:
+  nodeSelector:
+    role: monitoring
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+  service:
+    type: NodePort
+    nodePort: 30300
+
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      role: monitoring
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30900
+  prometheusSpec:
+    nodeSelector:
+      role: monitoring
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        memory: 512Mi
+    retention: 7d
+
+kube-state-metrics:
+  nodeSelector:
+    role: monitoring
+
+prometheus-node-exporter:
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists

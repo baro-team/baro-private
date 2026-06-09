@@ -1,0 +1,37 @@
+image:
+  registry: docker.io
+  repository: timescale/timescaledb
+  tag: 2.23.1-pg17
+  pullPolicy: IfNotPresent
+
+nodeSelector:
+  kubernetes.io/hostname: k3s-worker-1
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: local-path
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 3Gi
+
+service:
+  type: NodePort
+  port: 5432
+
+config:
+  postgresqlSharedBuffers: 1GB
+  postgresqlEffectiveCacheSize: 3GB
+  postgresqlMaxConnections: 100
+  postgresqlWorkMem: 16MB
+  postgresqlMaintenanceWorkMem: 256MB
+  postgresqlWalBuffers: 32MB
+  postgresqlRandomPageCost: "1.0"
+  postgresqlCheckpointCompletionTarget: "0.9"
+  timescaledbMaxBackgroundWorkers: 8
+  timescaledbTelemetry: "off"

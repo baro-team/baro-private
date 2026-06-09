@@ -1,0 +1,113 @@
+executor: LocalExecutor
+
+images:
+  airflow:
+    repository: 10.10.20.4/baro/airflow
+    tag: 3.2.0-custom
+    pullPolicy: IfNotPresent
+
+webserver:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+scheduler:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+dagProcessor:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+triggerer:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+apiServer:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  service:
+    type: NodePort
+    ports:
+      - name: api-server
+        port: 8080
+        targetPort: 8080
+        nodePort: 30800
+
+createUserJob:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+
+migrateDatabaseJob:
+  nodeSelector:
+    kubernetes.io/hostname: k3s-worker-2
+
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: true
+    repo: https://github.com/baro-team/airflow-dags-repo.git
+    branch: main
+    rev: HEAD
+    depth: 1
+    period: 30s
+    subPath: dags
+
+data:
+  metadataConnection:
+    protocol: postgresql
+    host: timescaledb.database.svc.cluster.local
+    port: 5432
+    db: airflow_metadata
+    user: postgres
+
+logs:
+  persistence:
+    enabled: false
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
+
+flower:
+  enabled: false
+
+statsd:
+  enabled: false
