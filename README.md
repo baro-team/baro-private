@@ -1,181 +1,231 @@
-# baro-private
+# Baro Private Cloud
 
-## Overview
+온프레미스 OpenStack과 AWS를 Site-to-Site VPN으로 연결하고, OpenStack VM 위의 K3s 클러스터에서 데이터 저장, 분석, 모니터링 서비스를 운영하는 하이브리드 인프라 프로젝트입니다.
 
-본 프로젝트는 무인택시 운영 환경을 가정하여 다음 두 계층으로 역할을 분리합니다.
+이 저장소는 기존 운영 리소스를 Terraform state로 가져와 선언적으로 관리하며, OpenStack 리소스와 K3s Helm 릴리스를 분리해 배포합니다.
 
-- **Public Cloud**
-  - 메인 서비스 운영
-  - 배차, 차량 스트리밍, 위치 관리
-  - 외부 사용자 접근 및 서비스 이중화
+## Architecture
 
-- **Private Cloud**
-  - OpenStack 기반 내부 분석/운영 환경
-  - 퍼블릭 서비스 데이터 수신 및 저장
-  - 일 단위 분석 수행
-  - 차량 재배치 정책 및 가중치 생성 후 퍼블릭 전달
+```mermaid
+flowchart LR
+    USERS["Internal Users"]
+    AWS["AWS VPC<br/>Kafka / RDS"]
+    AIO["openstack-aio<br/>OpenStack Controller + Compute<br/>StrongSwan VPN / DNAT / CI Runner"]
+    COMPUTE["openstack-compute<br/>OpenStack Compute"]
 
-본 저장소에서는 그중 **프라이빗 클라우드 영역**의 구축 및 운영 내용을 중점적으로 다룹니다.
+    subgraph INT["int-net 10.10.10.0/24"]
+        MASTER["k3s-master<br/>Control Plane / Monitoring"]
+        WORKER1["k3s-worker-1<br/>TimescaleDB"]
+        WORKER2["k3s-worker-2<br/>Airflow"]
+    end
 
----
+    subgraph VXLAN["vxlan-net 10.10.20.0/24"]
+        HARBOR["Harbor<br/>Container Registry"]
+        BACKUP["MinIO<br/>Backup Storage"]
+    end
 
-## Private Cloud Scope
+    USERS -->|"Service ports / DNAT"| AIO
+    AIO <-->|"StrongSwan IPsec VTI"| AWS
+    AIO --> INT
+    AIO -->|"internal-router"| VXLAN
+    AIO --- COMPUTE
+    COMPUTE --> HARBOR
+    COMPUTE --> BACKUP
+```
 
-프라이빗 클라우드는 다음 역할을 담당합니다.
+### Main Components
 
-- OpenStack 기반 분석용 인프라 제공
-- VM 기반 내부 서비스 실행 환경 제공
-- K3s 클러스터 구성
-- 퍼블릭에서 전달받은 데이터의 저장 및 후처리 기반 마련
-- 향후 분석 파이프라인 및 정책 생성 로직 탑재 예정
+| Layer | Component | Role |
+|---|---|---|
+| Physical | `openstack-aio` | OpenStack controller/compute, VPN gateway, DNAT gateway, GitHub Actions runner |
+| Physical | `openstack-compute` | Compute node for Harbor and backup workloads |
+| OpenStack | `int-net` | K3s node network |
+| OpenStack | `vxlan-net` | Harbor and MinIO network |
+| K3s | `k3s-master` | Control plane, Prometheus, Grafana |
+| K3s | `k3s-worker-1` | TimescaleDB and database backup workload |
+| K3s | `k3s-worker-2` | Apache Airflow |
+| AWS | Kafka / RDS | Public-cloud data source and managed database |
 
----
+## Network Flow
 
-## Current Implementation Status
+### External Service Access
 
-### Infrastructure
-- Ubuntu 24.04 LTS Server 기반 단일 호스트 구축
-- KVM 지원 하드웨어에서 OpenStack AIO 구성
-- Kolla-Ansible 기반 OpenStack 배포 완료
-- Cinder LVM 백엔드 활성화
-- Open vSwitch 기반 Neutron provider network 구성 완료
+K3s의 Traefik과 ServiceLB는 비활성화되어 있습니다. 외부 서비스 접근은 메인 서버의 iptables DNAT와 K3s NodePort를 사용합니다.
 
-### Network
-- WiFi 인터페이스를 통한 외부 접속 및 인터넷 연결 구성
-- `br-ex`를 VM 네트워크 게이트웨이로 사용
-- NAT 기반 외부 통신 구성
-- `int-net (10.10.10.0/24)` 내부 네트워크 구성 완료
+```text
+Client
+  -> openstack-aio
+  -> iptables DNAT
+  -> K3s NodePort
+  -> Service / Pod
+```
 
-### Virtual Machines
-- `k3s-master` 생성 완료
-- `k3s-worker-1` 생성 완료
-- `vpn-gateway` 생성 완료
+Harbor와 MinIO는 `vxlan-net`에 있으며 `internal-router`를 통해 접근합니다.
 
-### Kubernetes
-- K3s control-plane / worker 구성 완료
-- 클러스터 노드 Ready 상태 확인 완료
+```text
+openstack-aio
+  -> br-ex
+  -> internal-router
+  -> vxlan-net
+  -> Harbor / MinIO
+```
 
----
+### AWS Connectivity
 
-## Environment Summary
+StrongSwan VTI 터널이 온프레미스와 AWS VPC를 연결합니다.
 
-### Hardware
-- CPU: 32 cores (KVM supported)
-- RAM: 62GB
-- Storage: 476GB NVMe SSD
+```text
+K3s or openstack-aio
+  -> VTI route
+  -> StrongSwan IPsec
+  -> AWS VPC
+  -> Kafka / RDS
+```
 
-### OS
-- Ubuntu 24.04 LTS Server
+PostgreSQL `5432` DNAT에는 메인 서버 목적지 조건이 적용되어, 온프레미스 TimescaleDB 접근과 AWS RDS 접근이 충돌하지 않도록 구성되어 있습니다.
 
-### Storage Layout
-- `/boot/efi` : 1GB
-- `/boot` : 2GB
-- `ubuntu-vg`
-  - `/` : 100GB
-  - `/var` : 160GB
-  - `swap` : 8GB
-- `cinder-volumes`
-  - OpenStack LVM backend for Cinder
+## Managed Resources
 
-> Note  
-> 현재 문서 기준으로 `cinder-volumes`는 OpenStack VM 디스크용 스토리지로 설명하고 있으나, 실제 인스턴스가 **boot from volume** 방식인지, 혹은 flavor의 root disk를 사용하는 **ephemeral 기반**인지에 따라 저장 경로 해석이 달라질 수 있습니다. 이 부분은 별도 문서에서 명확히 구분할 예정입니다.
+### OpenStack
 
----
+[`terraform/openstack`](terraform/openstack)은 다음 리소스를 관리합니다.
 
-## Network Topology - 진행 중 변경 가능
+- Networks and subnets
+- Internal router and subnet route
+- Fixed-IP ports
+- Security group and rules
+- Flavors
+- Boot-from-volume instances
+- Cinder volumes
 
-### Host Network
-- WiFi NIC: `wlxb0386cf00b2f`
-- Host IP: `192.168.203.187/22`
-- External bridge: `br-ex`
-- External gateway for VM network: `10.10.10.1/24`
+| VM | Placement | Workload |
+|---|---|---|
+| `k3s-master` | `openstack-aio` | K3s control plane and monitoring |
+| `k3s-worker-1` | `openstack-aio` | TimescaleDB |
+| `k3s-worker-2` | `openstack-aio` | Airflow |
+| `harbor` | `openstack-compute` | Container registry |
+| `backup` | `openstack-compute` | MinIO backup storage |
 
-### VM Network
-- Network: `int-net`
-- Type: flat / physnet1
-- CIDR: `10.10.10.0/24`
+### K3s Helm Releases
 
-### Provisioned Instances
-- `k3s-master` : `10.10.10.116`
-- `k3s-worker-1` : `10.10.10.126`
-- `vpn-gateway` : `10.10.10.177`
+[`terraform/k3s`](terraform/k3s)은 다음 Helm 릴리스를 관리합니다.
 
-### Traffic Flow
-- VM → `br-ex` → host WiFi NIC → router → internet
-- External PC → WiFi → host SSH
+| Release | Namespace | Purpose |
+|---|---|---|
+| `monitoring` | `monitoring` | kube-prometheus-stack, Grafana, Prometheus |
+| `timescaledb` | `database` | PostgreSQL 17-based TimescaleDB |
+| `airflow` | `airflow` | Data workflow orchestration |
 
----
+Airflow는 TimescaleDB 이후 설치되도록 Terraform dependency가 설정되어 있습니다.
 
-## OpenStack Stack - 진행 중 변경될 수 있음
+## Backup Strategy
 
-### Deployment
-- Kolla-Ansible 21.0.0
-- OpenStack release: 2025.2
+MinIO가 백업 저장소로 사용되며 백업 파일은 3일간 보존됩니다.
 
-### Enabled Services
-- Keystone
-- Nova
-- Neutron
-- Glance
-- Cinder
-- Horizon
-- MariaDB
-- RabbitMQ
-- Memcached
+| Target | Method | Schedule |
+|---|---|---|
+| TimescaleDB | K3s CronJob, `pg_dump`, gzip, MinIO upload | Daily |
+| K3s SQLite | Master-node cron, gzip, MinIO upload | Daily |
+| Terraform state | Host cron, OpenStack/K3s state copy, MinIO upload | Daily |
+| Harbor | Bucket reserved; backup workflow not yet enabled | Not configured |
 
-### Disabled / Omitted Services
-- HAProxy (single node)
-- Heat
-- Swift
-- Ceilometer
-- Central Logging
+백업 작업과 MinIO lifecycle 설정은 현재 Terraform 관리 범위 밖에 있습니다.
 
----
+## Repository Layout
 
-## OpenStack Resources
+```text
+.
+|-- .github/workflows/
+|   `-- terraform.yml          # Terraform CI/CD workflow
+|-- docs/                      # Reference and operation documents
+|-- manifests/                 # Manually managed Kubernetes manifests
+|-- scripts/                   # Host networking and operation scripts
+`-- terraform/
+    |-- openstack/             # OpenStack resources
+    `-- k3s/
+        `-- helm-values/       # Helm values for managed releases
+```
 
-### Image
-- `ubuntu-22.04` (Jammy cloud image, qcow2)
+## Terraform Usage
 
-### Flavors
-- `k3s-master` : 4 vCPU / 8GB RAM / 40GB disk
-- `k3s-worker` : 4 vCPU / 16GB RAM / 60GB disk
-- `lightweight` : 2 vCPU / 2GB RAM / 20GB disk
+### Prerequisites
 
-### Security Group (default)
-- TCP: 22, 80, 443, 6443, 10250, 30000-32767
-- UDP: 51820
-- ICMP allowed
+- Terraform 1.5 or newer
+- Access to the OpenStack API
+- Access to the K3s kubeconfig
+- Existing OpenStack and Helm resources imported into Terraform state
+- Required secrets provided through environment variables or ignored `.tfvars` files
 
----
+### OpenStack
 
-## K3s Cluster
-
-- `k3s-master` : control-plane / master
-- `k3s-worker-1` : worker
-- `vpn-gateway` : WireGuard VPN gateway (not joined to K3s)
-
----
-
-## Quick Commands
-
-### OpenStack CLI
 ```bash
-source ~/kolla-venv/bin/activate
-export OS_CLOUD=kolla-admin
+cd terraform/openstack
+terraform init
+terraform fmt -check -recursive
+terraform validate
+terraform plan
 ```
 
-## List instances
+### K3s Helm Releases
+
 ```bash
-openstack server list
+cd terraform/k3s
+terraform init
+terraform fmt -check -recursive
+terraform validate
+terraform plan
 ```
-### Access Horizon
+
+Do not run `terraform apply` until the plan has been reviewed for unexpected create, replace, or destroy operations.
+
+## State Management
+
+OpenStack and K3s use separate local backend state files on the self-hosted runner.
+
+```text
+/home/baro/terraform-state/openstack/terraform.tfstate
+/home/baro/terraform-state/k3s/terraform.tfstate
 ```
-URL: http://192.168.203.187
-ID: admin
+
+State files can contain sensitive values and must never be committed. The backend directories must be backed up separately.
+
+## CI/CD
+
+The GitHub Actions workflow detects changes by Terraform directory and runs only the relevant job.
+
+```text
+Path detection
+  -> terraform fmt -check
+  -> terraform init
+  -> terraform validate
+  -> terraform plan
+  -> terraform apply on main push
 ```
-### Check K3s nodes
-```
-sudo kubectl get nodes
-sudo kubectl get pods -A
-```
+
+Terraform 작업은 `self-hosted`, `linux`, `x64`, `openstack` 라벨을 가진 runner에서 실행되며, 필요한 인증 정보는 GitHub Actions Secrets로 전달됩니다.
+
+## Operational Boundaries
+
+Terraform manages OpenStack resources and Helm releases. The following host-level or operational settings remain manually managed:
+
+- StrongSwan and VTI configuration
+- iptables DNAT rules
+- `br-ex` recovery and host routes
+- K3s node labels
+- TimescaleDB backup CronJob
+- K3s SQLite backup cron
+- Terraform state backup cron
+- OS packages and Docker installation
+
+## Security
+
+- Never commit `.tfvars`, state files, kubeconfig files, private keys, passwords, or tokens.
+- Review every Terraform plan before applying it.
+- Treat workflow changes as infrastructure changes because the self-hosted runner can reach production resources.
+- Rotate credentials immediately if they are exposed in Git history or logs.
+
+## Known Operational Notes
+
+- TimescaleDB uses an automatically allocated NodePort because the current chart does not expose a configurable NodePort value. Reinstallation may require restoring the expected NodePort or updating the DNAT rule.
+- StrongSwan policy routes in Linux routing table 220 can conflict with VTI routes. Host scripts remove conflicting policy routes when tunnels change.
+- `br-ex`, DNAT rules, and host routes are restored after reboot by host-level systemd scripts.
