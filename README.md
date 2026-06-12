@@ -131,6 +131,17 @@ MinIO가 백업 저장소로 사용되며 백업 파일은 3일간 보존됩니�
 
 백업 작업과 MinIO lifecycle 설정은 현재 Terraform 관리 범위 밖에 있습니다.
 
+## Documentation
+
+| 문서 | 내용 |
+|---|---|
+| [OpenStack Private Cloud](docs/openstack-private-cloud.md) | OpenStack network, port, VM, volume 및 security group 상세 |
+| [Network and VPN](docs/network-vpn.md) | `br-ex`, DNAT, host route, StrongSwan 및 table 220 |
+| [K3s Cluster](docs/k3s-cluster.md) | K3s node, Helm release, workload 배치 및 NodePort |
+| [Backup and Recovery](docs/backup-recovery.md) | Backup 구조, 복원 원칙 및 복원 테스트 |
+| [Terraform and CI/CD](docs/terraform-cicd.md) | Terraform state, workflow, runner 및 보안 |
+| [Operation Guide](docs/operation-guide.md) | 일상 점검, 재부팅 확인 및 장애 대응 명령 |
+
 ## Repository Layout
 
 ```text
@@ -226,6 +237,5 @@ Terraform은 OpenStack 리소스와 Helm release를 관리합니다. 다음 host
 
 ## Known Operational Notes
 
-- 현재 chart에서 NodePort 값을 지정할 수 없어 TimescaleDB는 자동 할당된 NodePort를 사용합니다. 재설치 시 기존 NodePort를 복원하거나 DNAT rule을 갱신해야 할 수 있습니다.
-- Linux routing table 220의 StrongSwan policy route가 VTI route와 충돌할 수 있습니다. 터널 변경 시 host script가 충돌하는 policy route를 제거합니다.
-- `br-ex`, DNAT rule 및 host route는 재부팅 후 host의 systemd script를 통해 복구됩니다.
+- TimescaleDB NodePort, table 220 route 및 재부팅 후 network 복구에는 별도 운영 절차가 필요합니다.
+- 자세한 원인과 대응 방법은 [Network and VPN](docs/network-vpn.md), [K3s Cluster](docs/k3s-cluster.md), [Operation Guide](docs/operation-guide.md)를 참고합니다.
