@@ -1,0 +1,47 @@
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        preferred_ip_protocol: ip4
+    tcp_connect:
+      prober: tcp
+      timeout: 5s
+
+nodeSelector:
+  role: monitoring
+
+releaseLabel: false
+
+serviceMonitor:
+  enabled: true
+  scheme: http
+  path: /probe
+  defaults:
+    labels:
+      release: monitoring
+    interval: 60s
+    scrapeTimeout: 10s
+    module: http_2xx
+  targets: []
+  # 실제 endpoint 확정 후 아래 예시처럼 추가하세요. target이 없으면 probe/alert는 생성되지 않습니다.
+  # targets:
+  #   - name: public-gateway
+  #     url: https://dev.barocloud.com
+  #     module: http_2xx
+  #     labels:
+  #       release: monitoring
+  #   - name: internal-gateway
+  #     url: https://internal-dev.barocloud.com/internal/gateway/health
+  #     module: http_2xx
+  #     labels:
+  #       release: monitoring
+  #   - name: kafka
+  #     url: kafka.baro.internal:9092
+  #     module: tcp_connect
+  #     labels:
+  #       release: monitoring
+
+prometheusRule:
+  enabled: false

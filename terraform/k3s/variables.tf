@@ -13,6 +13,18 @@ variable "monitoring_chart_version" {
   default     = "84.1.2"
 }
 
+variable "cloudwatch_exporter_chart_version" {
+  description = "prometheus-cloudwatch-exporter chart version"
+  type        = string
+  default     = "0.28.1"
+}
+
+variable "blackbox_exporter_chart_version" {
+  description = "prometheus-blackbox-exporter chart version"
+  type        = string
+  default     = "11.12.0"
+}
+
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
