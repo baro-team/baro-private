@@ -15,3 +15,39 @@ resource "helm_release" "monitoring" {
   }
 
 }
+
+resource "helm_release" "cloudwatch_exporter" {
+  name             = "cloudwatch-exporter"
+  namespace        = "monitoring"
+  create_namespace = false
+
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus-cloudwatch-exporter"
+  version    = var.cloudwatch_exporter_chart_version
+
+  values = [file("${path.module}/helm-values/cloudwatch-exporter.yaml")]
+
+  atomic          = true
+  cleanup_on_fail = true
+  timeout         = 600
+
+  depends_on = [helm_release.monitoring]
+}
+
+resource "helm_release" "blackbox_exporter" {
+  name             = "blackbox-exporter"
+  namespace        = "monitoring"
+  create_namespace = false
+
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus-blackbox-exporter"
+  version    = var.blackbox_exporter_chart_version
+
+  values = [file("${path.module}/helm-values/blackbox-exporter.yaml")]
+
+  atomic          = true
+  cleanup_on_fail = true
+  timeout         = 600
+
+  depends_on = [helm_release.monitoring]
+}

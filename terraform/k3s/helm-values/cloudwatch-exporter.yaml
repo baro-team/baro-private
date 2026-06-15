@@ -1,0 +1,79 @@
+region: ap-northeast-2
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: monitoring
+  interval: 300s
+  timeout: 30s
+
+aws:
+  secret:
+    name: cloudwatch-exporter-aws-credentials
+    includesSessionToken: false
+
+config: |
+  region: ap-northeast-2
+  period_seconds: 300
+  delay_seconds: 600
+  metrics:
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: RequestCount
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: HTTPCode_Target_5XX_Count
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Sum]
+    - aws_namespace: AWS/ApplicationELB
+      aws_metric_name: TargetResponseTime
+      aws_dimensions: [LoadBalancer]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ECS
+      aws_metric_name: CPUUtilization
+      aws_dimensions: [ClusterName, ServiceName]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ECS
+      aws_metric_name: MemoryUtilization
+      aws_dimensions: [ClusterName, ServiceName]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/RDS
+      aws_metric_name: CPUUtilization
+      aws_dimensions: [DBInstanceIdentifier]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/RDS
+      aws_metric_name: FreeStorageSpace
+      aws_dimensions: [DBInstanceIdentifier]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/RDS
+      aws_metric_name: DatabaseConnections
+      aws_dimensions: [DBInstanceIdentifier]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ElastiCache
+      aws_metric_name: CPUUtilization
+      aws_dimensions: [CacheClusterId]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ElastiCache
+      aws_metric_name: CurrConnections
+      aws_dimensions: [CacheClusterId]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ElastiCache
+      aws_metric_name: DatabaseMemoryUsagePercentage
+      aws_dimensions: [CacheClusterId]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/ElastiCache
+      aws_metric_name: Evictions
+      aws_dimensions: [CacheClusterId]
+      aws_statistics: [Sum]
+    - aws_namespace: AWS/EC2
+      aws_metric_name: CPUUtilization
+      aws_dimensions: [InstanceId]
+      aws_statistics: [Average]
+    - aws_namespace: AWS/EC2
+      aws_metric_name: StatusCheckFailed_Instance
+      aws_dimensions: [InstanceId]
+      aws_statistics: [Maximum]
+    - aws_namespace: AWS/EC2
+      aws_metric_name: StatusCheckFailed_System
+      aws_dimensions: [InstanceId]
+      aws_statistics: [Maximum]
