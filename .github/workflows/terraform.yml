@@ -63,13 +63,13 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -input=false -lock-timeout=5m -out=tfplan -no-color
+        run: terraform plan -input=false -lock-timeout= -out=tfplan -no-color
         env:
           TF_VAR_password: ${{ secrets.OPENSTACK_PASSWORD }}
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -input=false -lock-timeout=5m tfplan
+        run: terraform apply -input=false -lock-timeout=10m tfplan
         env:
           TF_VAR_password: ${{ secrets.OPENSTACK_PASSWORD }}
 
@@ -99,7 +99,7 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -input=false -lock-timeout=5m -out=tfplan -no-color
+        run: terraform plan -input=false -lock-timeout=10m -out=tfplan -no-color
         env:
           TF_VAR_kubeconfig_path: /home/baro/terraform-temp/k3s-kubeconfig.yaml
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
@@ -108,7 +108,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -input=false -lock-timeout=5m tfplan
+        run: terraform apply -input=false -lock-timeout=10m tfplan
         env:
           TF_VAR_kubeconfig_path: /home/baro/terraform-temp/k3s-kubeconfig.yaml
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
