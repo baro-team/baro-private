@@ -52,6 +52,7 @@ Airflow는 metadata DB로 TimescaleDB를 사용하므로 Terraform에서 `depend
 - Prometheus retention: `7d`
 - Grafana admin password는 Terraform sensitive variable로 주입
 - cloudwatch-exporter AWS 자격 증명은 Kubernetes Secret `monitoring/cloudwatch-exporter-aws-credentials`로 주입합니다.
+- Secret data key는 chart template 기준 `access_key`, `secret_key`를 사용합니다.
 - blackbox-exporter는 `http_2xx`, `tcp_connect` 모듈을 사용합니다. 실제 probe target은 `helm-values/blackbox-exporter.yaml`에서 endpoint 확정 후 추가합니다.
 - 기존 Prometheus/Grafana 설정은 변경하지 않고 exporter Helm release만 추가합니다.
 
@@ -108,6 +109,7 @@ K3s Helm release는 [`terraform/k3s`](../terraform/k3s)에서 관리합니다.
 - Kubeconfig와 Kubernetes Secret 원문은 Git 또는 CI log에 출력하지 않습니다.
 - cloudwatch-exporter AWS 키는 Git에 넣지 말고 로컬에서 Secret을 생성합니다.
 - CloudWatch exporter metric 이름은 실제 배포 후 Prometheus `/graph`에서 확인한 뒤 AWS 리소스 알림을 추가합니다.
+- cloudwatch-exporter와 blackbox-exporter도 `role=monitoring` node에 배치합니다.
 
 ## 적용 방법
 

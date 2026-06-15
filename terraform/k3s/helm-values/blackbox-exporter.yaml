@@ -9,7 +9,10 @@ config:
       prober: tcp
       timeout: 5s
 
-releaseLabel: true
+nodeSelector:
+  role: monitoring
+
+releaseLabel: false
 
 serviceMonitor:
   enabled: true

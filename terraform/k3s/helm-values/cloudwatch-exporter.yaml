@@ -1,5 +1,8 @@
 region: ap-northeast-2
 
+nodeSelector:
+  role: monitoring
+
 serviceMonitor:
   enabled: true
   labels:
