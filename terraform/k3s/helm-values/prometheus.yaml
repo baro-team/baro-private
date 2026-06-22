@@ -537,8 +537,8 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 38},
                 "targets": [
-                  {"expr": "rate(baro_dispatch_idle_geo_saves_total[5m])", "legendFormat": "saves"},
-                  {"expr": "rate(baro_dispatch_idle_geo_removes_total[5m])", "legendFormat": "removes"}
+                  {"expr": "sum(rate(baro_dispatch_idle_geo_saves_total[5m]))", "legendFormat": "saves"},
+                  {"expr": "sum(rate(baro_dispatch_idle_geo_removes_total[5m]))", "legendFormat": "removes"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -549,7 +549,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 46},
                 "targets": [
-                  {"expr": "increase(baro_control_telemetry_kafka_publish_failed_total[5m])", "legendFormat": "kafka publish failed"},
+                  {"expr": "sum(increase(baro_control_telemetry_kafka_publish_failed_total[5m]))", "legendFormat": "kafka publish failed"},
                   {"expr": "sum by (phase) (increase(baro_control_sse_send_failures_total[5m]))", "legendFormat": "sse {{phase}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 20}]}}, "overrides": []}
@@ -561,7 +561,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 46},
                 "targets": [
-                  {"expr": "increase(baro_dispatch_idle_geo_candidate_not_found_total[5m])", "legendFormat": "not found"}
+                  {"expr": "sum(increase(baro_dispatch_idle_geo_candidate_not_found_total[5m]))", "legendFormat": "not found"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 5}, {"color": "red", "value": 20}]}}, "overrides": []}
               }
