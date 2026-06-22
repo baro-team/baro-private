@@ -359,6 +359,91 @@ grafana:
               }
             ]
           }
+      service-observability:
+        json: |
+          {
+            "uid": "baro-service-observability",
+            "title": "Baro Service Observability",
+            "tags": ["baro", "service", "gateway", "circuitbreaker"],
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "1m",
+            "time": {
+              "from": "now-6h",
+              "to": "now"
+            },
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "current": {
+                    "text": "Prometheus",
+                    "value": "Prometheus"
+                  }
+                }
+              ]
+            },
+            "panels": [
+              {
+                "id": 1,
+                "type": "stat",
+                "title": "Gateway Metrics Target Up",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+                "targets": [
+                  {"expr": "up{job=\"baro-gateway-service\"}", "legendFormat": "gateway"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 2,
+                "type": "timeseries",
+                "title": "CircuitBreaker State",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0},
+                "targets": [
+                  {"expr": "max by (name, state) (resilience4j_circuitbreaker_state{job=\"baro-gateway-service\"})", "legendFormat": "{{name}} {{state}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 3,
+                "type": "timeseries",
+                "title": "CircuitBreaker Failure Rate",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                "targets": [
+                  {"expr": "max by (name) (resilience4j_circuitbreaker_failure_rate{job=\"baro-gateway-service\"})", "legendFormat": "{{name}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 50}]}}, "overrides": []}
+              },
+              {
+                "id": 4,
+                "type": "timeseries",
+                "title": "CircuitBreaker Slow Call Rate",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+                "targets": [
+                  {"expr": "max by (name) (resilience4j_circuitbreaker_slow_call_rate{job=\"baro-gateway-service\"})", "legendFormat": "{{name}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 50}]}}, "overrides": []}
+              },
+              {
+                "id": 5,
+                "type": "timeseries",
+                "title": "CircuitBreaker Calls",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+                "targets": [
+                  {"expr": "sum by (name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"baro-gateway-service\"}[5m]))", "legendFormat": "{{name}} {{kind}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              }
+            ]
+          }
 
 alertmanager:
   config:
@@ -382,6 +467,17 @@ alertmanager:
             - matchers:
                 - severity="warning"
               receiver: aws-warning
+        - matchers:
+            - source="service"
+          receiver: service-warning
+          routes:
+            - matchers:
+                - severity="critical"
+              receiver: service-critical
+              repeat_interval: 1h
+            - matchers:
+                - severity="warning"
+              receiver: service-warning
         - matchers:
             - severity="critical"
           receiver: onprem-critical
@@ -438,12 +534,37 @@ alertmanager:
               • 발생시각(UTC): {{ .StartsAt }}
               • 설명: {{ .Annotations.description }}
               {{ end }}
+      - name: service-critical
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-service-slack-webhook/webhook_url
+            channel: "#baro-service-alert"
+            send_resolved: true
+            title: "[SERVICE][CRITICAL] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
+      - name: service-warning
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-service-slack-webhook/webhook_url
+            channel: "#baro-service-alert"
+            send_resolved: true
+            title: "[SERVICE][WARNING] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
   alertmanagerSpec:
     nodeSelector:
       role: monitoring
     secrets:
       - alertmanager-slack-webhook
       - alertmanager-aws-slack-webhook
+      - alertmanager-service-slack-webhook
 
 additionalPrometheusRulesMap:
   baro-dev-aws-observability:
@@ -583,12 +704,82 @@ additionalPrometheusRulesMap:
               summary: "EC2 CPU is high"
               description: "EC2 CPU 사용률이 15분 이상 85%를 초과했습니다. instance={{ $labels.instance_id }}"
 
+  baro-dev-service-observability:
+    groups:
+      - name: baro.dev.service.gateway
+        rules:
+          - alert: BaroGatewayMetricsTargetDown
+            expr: up{job="baro-gateway-service"} == 0
+            for: 3m
+            labels:
+              source: service
+              severity: critical
+              domain: gateway
+              service: gateway-service
+            annotations:
+              summary: "gateway-service metrics target is down"
+              description: "gateway-service /actuator/prometheus scrape가 3분 이상 실패했습니다. target={{ $labels.instance }}"
+          - alert: BaroGatewayCircuitBreakerOpen
+            expr: max by (name) (resilience4j_circuitbreaker_state{job="baro-gateway-service", state="open"}) == 1
+            for: 1m
+            labels:
+              source: service
+              severity: critical
+              domain: gateway
+              service: gateway-service
+            annotations:
+              summary: "Gateway circuit breaker is open"
+              description: "Gateway CircuitBreaker가 1분 이상 OPEN 상태입니다. circuit_breaker={{ $labels.name }}"
+          - alert: BaroGatewayCircuitBreakerHalfOpen
+            expr: max by (name) (resilience4j_circuitbreaker_state{job="baro-gateway-service", state="half_open"}) == 1
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: gateway
+              service: gateway-service
+            annotations:
+              summary: "Gateway circuit breaker is half-open"
+              description: "Gateway CircuitBreaker가 5분 이상 HALF_OPEN 상태입니다. circuit_breaker={{ $labels.name }}"
+          - alert: BaroGatewayCircuitBreakerFailureRateHigh
+            expr: max by (name) (resilience4j_circuitbreaker_failure_rate{job="baro-gateway-service"}) >= 50
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: gateway
+              service: gateway-service
+            annotations:
+              summary: "Gateway circuit breaker failure rate is high"
+              description: "Gateway CircuitBreaker 실패율이 5분 이상 50% 이상입니다. circuit_breaker={{ $labels.name }}"
+          - alert: BaroGatewayCircuitBreakerSlowCallRateHigh
+            expr: max by (name) (resilience4j_circuitbreaker_slow_call_rate{job="baro-gateway-service"}) >= 50
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: gateway
+              service: gateway-service
+            annotations:
+              summary: "Gateway circuit breaker slow call rate is high"
+              description: "Gateway CircuitBreaker slow call 비율이 5분 이상 50% 이상입니다. circuit_breaker={{ $labels.name }}"
+
 prometheus:
   service:
     type: NodePort
     nodePort: 30900
   prometheusSpec:
     externalUrl: ${prometheus_external_url}
+    additionalScrapeConfigs:
+      - job_name: baro-gateway-service
+        scheme: ${gateway_metrics_scheme}
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - ${gateway_metrics_target}
+            labels:
+              source: service
+              service: gateway-service
     nodeSelector:
       role: monitoring
     resources:

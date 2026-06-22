@@ -37,6 +37,18 @@ variable "prometheus_external_url" {
   default     = "http://192.168.203.187:30900"
 }
 
+variable "gateway_metrics_scheme" {
+  description = "Scheme used by Prometheus to scrape gateway-service actuator metrics"
+  type        = string
+  default     = "https"
+}
+
+variable "gateway_metrics_target" {
+  description = "Host[:port] target used by Prometheus to scrape gateway-service /actuator/prometheus"
+  type        = string
+  default     = "dev.barocloud.com"
+}
+
 # ──────────────────────────────────────
 # airflow
 # ──────────────────────────────────────
