@@ -786,6 +786,111 @@ additionalPrometheusRulesMap:
               summary: "Gateway circuit breaker slow call rate is high"
               description: "Gateway CircuitBreaker slow call 비율이 5분 이상 50% 이상입니다. instance={{ $labels.instance }}, circuit_breaker={{ $labels.name }}"
 
+      - name: baro.dev.service.pipeline
+        rules:
+          - alert: BaroControlMetricsTargetDown
+            expr: up{job="baro-control-service"} == 0
+            for: 3m
+            labels:
+              source: service
+              severity: critical
+              domain: telemetry
+              service: control-service
+            annotations:
+              summary: "control-service metrics target is down"
+              description: "control-service /actuator/prometheus scrape가 3분 이상 실패했습니다. target={{ $labels.instance }}"
+          - alert: BaroDispatchMetricsTargetDown
+            expr: up{job="baro-dispatch-service"} == 0
+            for: 3m
+            labels:
+              source: service
+              severity: critical
+              domain: dispatch
+              service: dispatch-service
+            annotations:
+              summary: "dispatch-service metrics target is down"
+              description: "dispatch-service /actuator/prometheus scrape가 3분 이상 실패했습니다. target={{ $labels.instance }}"
+          - alert: BaroTelemetryKafkaPublishFailures
+            expr: increase(baro_control_telemetry_kafka_publish_failed_total[5m]) > 0
+            for: 1m
+            labels:
+              source: service
+              severity: warning
+              domain: telemetry
+              service: control-service
+            annotations:
+              summary: "Telemetry Kafka publish failures detected"
+              description: "control-service Kafka publish 실패가 감지되었습니다. failures_5m={{ $value }}"
+          - alert: BaroControlSseSendFailuresHigh
+            expr: increase(baro_control_sse_send_failures_total[5m]) > 20
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: telemetry
+              service: control-service
+            annotations:
+              summary: "SSE send failures are high"
+              description: "control-service SSE send 실패가 5분 동안 20건을 초과했습니다. phase={{ $labels.phase }}, failures_5m={{ $value }}"
+
+      - name: baro.dev.service.fleet
+        rules:
+          - alert: BaroVehicleIdleRatioHigh
+            expr: sum(baro_dispatch_vehicle_status_current{status="idle"}) / sum(baro_dispatch_vehicle_status_current) > 0.9
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: fleet
+              service: dispatch-service
+            annotations:
+              summary: "Vehicle idle ratio is high"
+              description: "차량 IDLE 비율이 5분 이상 90%를 초과했습니다. ratio={{ $value }}"
+          - alert: BaroVehicleActiveFleetLow
+            expr: sum(baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}) < 10 and sum(baro_dispatch_vehicle_status_current) > 100
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: fleet
+              service: dispatch-service
+            annotations:
+              summary: "Active vehicle count is low"
+              description: "전체 차량이 100대 이상인데 운행/이동/재배치 차량이 10대 미만입니다. active={{ $value }}"
+          - alert: BaroDispatchIdleGeoSavesSpike
+            expr: increase(baro_dispatch_idle_geo_saves_total[5m]) > 500
+            for: 1m
+            labels:
+              source: service
+              severity: warning
+              domain: dispatch
+              service: dispatch-service
+            annotations:
+              summary: "Dispatch idle GEO saves spiked"
+              description: "5분 동안 Redis idle GEO 저장이 500건을 초과했습니다. saves_5m={{ $value }}"
+          - alert: BaroDispatchIdleGeoEmpty
+            expr: baro_dispatch_idle_geo_count == 0
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: dispatch
+              service: dispatch-service
+            annotations:
+              summary: "Dispatch idle GEO pool is empty"
+              description: "Redis idle GEO pool이 5분 이상 비어 있습니다. 배차 후보 탐색 실패 가능성이 있습니다."
+          - alert: BaroDispatchCandidateNotFoundHigh
+            expr: increase(baro_dispatch_idle_geo_candidate_not_found_total[5m]) > 20
+            for: 5m
+            labels:
+              source: service
+              severity: warning
+              domain: dispatch
+              service: dispatch-service
+            annotations:
+              summary: "Dispatch candidate not found is high"
+              description: "5분 동안 배차 후보 없음이 20건을 초과했습니다. count_5m={{ $value }}"
+
 prometheus:
   service:
     type: NodePort
@@ -804,6 +909,28 @@ prometheus:
             labels:
               source: service
               service: gateway-service
+      - job_name: baro-control-service
+        scheme: ${control_metrics_scheme}
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+%{ for target in control_metrics_targets ~}
+              - ${target}
+%{ endfor ~}
+            labels:
+              source: service
+              service: control-service
+      - job_name: baro-dispatch-service
+        scheme: ${dispatch_metrics_scheme}
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+%{ for target in dispatch_metrics_targets ~}
+              - ${target}
+%{ endfor ~}
+            labels:
+              source: service
+              service: dispatch-service
     nodeSelector:
       role: monitoring
     resources:

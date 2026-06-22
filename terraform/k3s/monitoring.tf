@@ -9,9 +9,13 @@ resource "helm_release" "monitoring" {
 
   values = [
     templatefile("${path.module}/helm-values/prometheus.yaml", {
-      prometheus_external_url = var.prometheus_external_url
-      gateway_metrics_scheme  = var.gateway_metrics_scheme
-      gateway_metrics_targets = var.gateway_metrics_targets
+      prometheus_external_url  = var.prometheus_external_url
+      gateway_metrics_scheme   = var.gateway_metrics_scheme
+      gateway_metrics_targets  = var.gateway_metrics_targets
+      control_metrics_scheme   = var.control_metrics_scheme
+      control_metrics_targets  = var.control_metrics_targets
+      dispatch_metrics_scheme  = var.dispatch_metrics_scheme
+      dispatch_metrics_targets = var.dispatch_metrics_targets
     })
   ]
 

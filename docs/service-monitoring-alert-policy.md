@@ -6,7 +6,7 @@ dev 환경의 애플리케이션 서비스 지표와 CircuitBreaker 상태 알�
 
 - AWS 인프라 알림은 `#baro-aws-alerts`, 온프렘/k3s 기본 알림은 `#baro-onprem-alerts`, 애플리케이션 서비스 알림은 `#baro-service-alert`로 분리한다.
 - 서비스 알림은 `source="service"` 라벨을 사용한다.
-- 현재 우선 대상은 `gateway-service`의 Spring Cloud Gateway / Resilience4j CircuitBreaker 지표다.
+- 서비스 알림은 blackbox 생존 감시, HTTP/JVM whitebox 지표, telemetry pipeline, fleet/dispatch 도메인 지표를 함께 본다.
 
 ## Slack 알림
 
@@ -21,18 +21,22 @@ kubectl -n monitoring create secret generic alertmanager-service-slack-webhook \
   --from-literal=webhook_url='<SERVICE_SLACK_INCOMING_WEBHOOK_URL>'
 ```
 
-## Gateway metrics scrape
+## Service metrics scrape
 
-Prometheus는 Gateway의 actuator Prometheus endpoint를 scrape한다.
+Prometheus는 서비스별 actuator Prometheus endpoint를 scrape한다.
 
 기본 설정:
 
 ```hcl
 gateway_metrics_scheme = "https"
 gateway_metrics_targets = ["internal-dev.barocloud.com:443"]
+control_metrics_scheme = "https"
+control_metrics_targets = ["control-metrics.dev.barocloud.com:443"]
+dispatch_metrics_scheme = "https"
+dispatch_metrics_targets = ["dispatch-metrics.dev.barocloud.com:443"]
 ```
 
-기본값은 dev bootstrap 편의를 위한 internal ALB의 고정 도메인이다. Terraform은 internal ALB에서 `/actuator/prometheus`만 gateway-service target group으로 라우팅한다.
+기본값은 dev bootstrap 편의를 위한 internal ALB의 고정 도메인이다. Terraform은 internal ALB에서 gateway는 `internal-dev.barocloud.com`, control/dispatch는 각각 `control-metrics.dev.barocloud.com`, `dispatch-metrics.dev.barocloud.com` host 기반으로 actuator endpoint를 target group에 라우팅한다.
 
 운영 환경 및 정확한 메트릭 분석이 필요한 경우, `gateway_metrics_targets`에 로드 밸런서 도메인이 아닌 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록을 설정해야 한다. 로드 밸런서를 scrape하면 매 요청마다 다른 task로 라우팅될 수 있으므로 다음 문제가 발생한다.
 
@@ -54,11 +58,45 @@ TF_VAR_gateway_metrics_targets='["10.20.10.10:8080","10.20.10.11:8080"]' \
 terraform apply
 ```
 
-Gateway 앱에서는 `/actuator/prometheus`가 노출되어 있어야 한다. 예를 들어 gateway-service 환경변수에는 다음이 필요하다.
+각 앱에서는 `/actuator/prometheus`가 노출되어 있어야 한다. 예를 들어 ECS 환경변수에는 다음이 필요하다.
 
 ```text
 GATEWAY_MANAGEMENT_ENDPOINTS=health,info,metrics,prometheus
+CONTROL_MANAGEMENT_ENDPOINTS=health,info,metrics,prometheus
+DISPATCH_MANAGEMENT_ENDPOINTS=health,info,metrics,prometheus
 ```
+
+## Blackbox probe
+
+Blackbox exporter는 외부 관점의 생존 여부를 확인한다.
+
+대상:
+
+- `https://dev.barocloud.com/`
+- `https://internal-dev.barocloud.com/actuator/prometheus`
+- `https://control-metrics.dev.barocloud.com/actuator/health`
+- `https://dispatch-metrics.dev.barocloud.com/actuator/health`
+- `kafka.baro.internal:9092`
+
+알림 기준:
+
+| 알람 | Prometheus 지표 | 기준 | 등급 |
+|---|---|---:|---|
+| Blackbox probe failed | `probe_success` | 3분 이상 0 | critical |
+
+## Telemetry / Fleet / Dispatch 도메인 알람 기준
+
+| 알람 | Prometheus 지표 | 기준 | 등급 |
+|---|---|---:|---|
+| Control metrics down | `up{job="baro-control-service"}` | 3분 이상 0 | critical |
+| Dispatch metrics down | `up{job="baro-dispatch-service"}` | 3분 이상 0 | critical |
+| Kafka publish failure | `baro_control_telemetry_kafka_publish_failed_total` | 5분 증가량 > 0 | warning |
+| SSE send failures high | `baro_control_sse_send_failures_total` | 5분 증가량 > 20 | warning |
+| Vehicle idle ratio high | `sum(baro_dispatch_vehicle_status_current{status="idle"}) / sum(baro_dispatch_vehicle_status_current)` | 5분 이상 90% 초과 | warning |
+| Active fleet low | `baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}` | 전체 100대 이상인데 active 10대 미만 | warning |
+| Idle GEO saves spike | `baro_dispatch_idle_geo_saves_total` | 5분 증가량 > 500 | warning |
+| Idle GEO pool empty | `baro_dispatch_idle_geo_count` | 5분 이상 0 | warning |
+| Candidate not found high | `baro_dispatch_idle_geo_candidate_not_found_total` | 5분 증가량 > 20 | warning |
 
 ## CircuitBreaker 알람 기준
 

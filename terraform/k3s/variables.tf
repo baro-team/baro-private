@@ -49,6 +49,30 @@ variable "gateway_metrics_targets" {
   default     = ["internal-dev.barocloud.com:443"]
 }
 
+variable "control_metrics_scheme" {
+  description = "Scheme used by Prometheus to scrape control-service actuator metrics"
+  type        = string
+  default     = "https"
+}
+
+variable "control_metrics_targets" {
+  description = "Control-service host[:port] targets for Prometheus /actuator/prometheus scraping. Prefer direct task/service-discovery targets; override per environment if Cloud Map is not reachable from the monitoring cluster."
+  type        = list(string)
+  default     = ["control-metrics.dev.barocloud.com:443"]
+}
+
+variable "dispatch_metrics_scheme" {
+  description = "Scheme used by Prometheus to scrape dispatch-service actuator metrics"
+  type        = string
+  default     = "https"
+}
+
+variable "dispatch_metrics_targets" {
+  description = "Dispatch-service host[:port] targets for Prometheus /actuator/prometheus scraping. Prefer direct task/service-discovery targets; override per environment if Cloud Map is not reachable from the monitoring cluster."
+  type        = list(string)
+  default     = ["dispatch-metrics.dev.barocloud.com:443"]
+}
+
 # ──────────────────────────────────────
 # airflow
 # ──────────────────────────────────────

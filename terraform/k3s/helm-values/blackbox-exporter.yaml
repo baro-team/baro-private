@@ -24,24 +24,59 @@ serviceMonitor:
     interval: 60s
     scrapeTimeout: 10s
     module: http_2xx
-  targets: []
-  # 실제 endpoint 확정 후 아래 예시처럼 추가하세요. target이 없으면 probe/alert는 생성되지 않습니다.
-  # targets:
-  #   - name: public-gateway
-  #     url: https://dev.barocloud.com
-  #     module: http_2xx
-  #     labels:
-  #       release: monitoring
-  #   - name: internal-gateway
-  #     url: https://internal-dev.barocloud.com/internal/gateway/health
-  #     module: http_2xx
-  #     labels:
-  #       release: monitoring
-  #   - name: kafka
-  #     url: kafka.baro.internal:9092
-  #     module: tcp_connect
-  #     labels:
-  #       release: monitoring
+  targets:
+    - name: public-gateway-health
+      url: https://dev.barocloud.com/
+      module: http_2xx
+      labels:
+        release: monitoring
+        source: blackbox
+        domain: gateway
+        service: gateway-service
+    - name: internal-gateway-prometheus
+      url: https://internal-dev.barocloud.com/actuator/prometheus
+      module: http_2xx
+      labels:
+        release: monitoring
+        source: blackbox
+        domain: gateway
+        service: gateway-service
+    - name: control-health
+      url: https://control-metrics.dev.barocloud.com/actuator/health
+      module: http_2xx
+      labels:
+        release: monitoring
+        source: blackbox
+        domain: telemetry
+        service: control-service
+    - name: dispatch-health
+      url: https://dispatch-metrics.dev.barocloud.com/actuator/health
+      module: http_2xx
+      labels:
+        release: monitoring
+        source: blackbox
+        domain: dispatch
+        service: dispatch-service
+    - name: kafka-tcp
+      url: kafka.baro.internal:9092
+      module: tcp_connect
+      labels:
+        release: monitoring
+        source: blackbox
+        domain: kafka
+        service: kafka
 
 prometheusRule:
-  enabled: false
+  enabled: true
+  additionalLabels:
+    release: monitoring
+  rules:
+    - alert: BaroBlackboxProbeFailed
+      expr: probe_success == 0
+      for: 3m
+      labels:
+        source: blackbox
+        severity: critical
+      annotations:
+        summary: "Blackbox probe failed"
+        description: "Blackbox probe가 3분 이상 실패했습니다. target={{ $labels.instance }}, job={{ $labels.job }}"
