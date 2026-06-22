@@ -29,10 +29,12 @@ Prometheus는 Gateway의 actuator Prometheus endpoint를 scrape한다.
 
 ```hcl
 gateway_metrics_scheme = "https"
-gateway_metrics_targets = []
+gateway_metrics_targets = ["internal-dev.barocloud.com:443"]
 ```
 
-`gateway_metrics_targets`에는 Load Balancer 도메인이 아니라 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록을 넣는다. Load Balancer를 scrape하면 요청마다 다른 task에 붙을 수 있어 CircuitBreaker instance 라벨이 흔들리고 알람 원인 식별이 어려워질 수 있다.
+기본값은 dev internal ALB의 고정 도메인이다. Terraform은 internal ALB에서 `/actuator/prometheus`만 gateway-service target group으로 라우팅한다.
+
+운영에서 task별 instance 라벨까지 정확히 분리해야 하면 `gateway_metrics_targets`를 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록으로 덮어쓴다. Load Balancer를 scrape하면 요청마다 다른 task에 붙을 수 있어 CircuitBreaker instance 라벨이 흔들릴 수 있다.
 
 예시 scrape 대상:
 
