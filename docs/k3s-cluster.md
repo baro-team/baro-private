@@ -115,21 +115,28 @@ K3s Helm release는 [`terraform/k3s`](../terraform/k3s)에서 관리합니다.
 
 1. `monitoring` namespace에 다음 Secret을 생성합니다.
     - `cloudwatch-exporter-aws-credentials`
+    - `alertmanager-slack-webhook`
    - key: `access_key`, `secret_key`
    - 예시:
      ```bash
      kubectl -n monitoring create secret generic cloudwatch-exporter-aws-credentials \
        --from-literal=access_key='<AWS_ACCESS_KEY_ID>' \
        --from-literal=secret_key='<AWS_SECRET_ACCESS_KEY>'
+
+      kubectl -n monitoring create secret generic alertmanager-slack-webhook \
+        --from-literal=webhook_url='<SLACK_INCOMING_WEBHOOK_URL>'
      ```
 2. `helm-values/blackbox-exporter.yaml`의 `serviceMonitor.targets`에 실제 public/internal health endpoint와 Kafka TCP target을 추가합니다.
 3. `terraform/k3s`에서 `terraform fmt -recursive` 후 `terraform init`, `terraform validate`를 실행합니다.
 4. 적용 후 Prometheus `/targets`, `/graph`에서 cloudwatch/blackbox metric 수집 여부를 확인합니다.
-5. Grafana dashboard와 alert rule은 exporter metric 이름을 확인한 뒤 별도 변경으로 추가합니다.
+5. Prometheus `/rules`에서 `baro.dev.aws.*` 알람 룰이 로드되었는지 확인합니다.
+6. Grafana에서 `Baro / Baro AWS Observability` 대시보드를 확인합니다.
+7. Alertmanager에서 Slack receiver와 알람 라우팅을 확인합니다.
 
 ## 관련 문서
 
 - [Network and VPN](network-vpn.md)
 - [Backup and Recovery](backup-recovery.md)
+- [AWS Monitoring and Alert Policy](aws-monitoring-alert-policy.md)
 - [Terraform and CI/CD](terraform-cicd.md)
 - [Operation Guide](operation-guide.md)
