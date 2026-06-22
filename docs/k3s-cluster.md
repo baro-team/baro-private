@@ -115,7 +115,8 @@ K3s Helm release는 [`terraform/k3s`](../terraform/k3s)에서 관리합니다.
 
 1. `monitoring` namespace에 다음 Secret을 생성합니다.
     - `cloudwatch-exporter-aws-credentials`
-    - `alertmanager-slack-webhook`
+    - `alertmanager-slack-webhook` (`#baro-onprem-alerts`)
+    - `alertmanager-aws-slack-webhook` (`#baro-aws-alerts`)
    - key: `access_key`, `secret_key`
    - 예시:
      ```bash
@@ -124,7 +125,10 @@ K3s Helm release는 [`terraform/k3s`](../terraform/k3s)에서 관리합니다.
        --from-literal=secret_key='<AWS_SECRET_ACCESS_KEY>'
 
       kubectl -n monitoring create secret generic alertmanager-slack-webhook \
-        --from-literal=webhook_url='<SLACK_INCOMING_WEBHOOK_URL>'
+        --from-literal=webhook_url='<ONPREM_SLACK_INCOMING_WEBHOOK_URL>'
+
+      kubectl -n monitoring create secret generic alertmanager-aws-slack-webhook \
+        --from-literal=webhook_url='<AWS_SLACK_INCOMING_WEBHOOK_URL>'
      ```
 2. `helm-values/blackbox-exporter.yaml`의 `serviceMonitor.targets`에 실제 public/internal health endpoint와 Kafka TCP target을 추가합니다.
 3. `terraform/k3s`에서 `terraform fmt -recursive` 후 `terraform init`, `terraform validate`를 실행합니다.
