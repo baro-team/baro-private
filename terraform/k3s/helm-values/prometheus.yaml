@@ -580,6 +580,9 @@ alertmanager:
       receiver: onprem-warning
       routes:
         - matchers:
+            - alertname=~"Watchdog|InfoInhibitor"
+          receiver: blackhole
+        - matchers:
             - source="aws"
           receiver: aws-warning
           routes:
@@ -609,6 +612,7 @@ alertmanager:
             - severity="warning"
           receiver: onprem-warning
     receivers:
+      - name: blackhole
       - name: aws-critical
         slack_configs:
           - api_url_file: /etc/alertmanager/secrets/alertmanager-aws-slack-webhook/webhook_url
