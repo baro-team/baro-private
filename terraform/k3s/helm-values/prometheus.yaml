@@ -205,6 +205,28 @@ grafana:
                   {"expr": "max by (instance_id) (aws_ec2_status_check_failed_system_maximum)", "legendFormat": "system {{instance_id}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 13,
+                "type": "timeseries",
+                "title": "EC2 Filesystem Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40},
+                "targets": [
+                  {"expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"baro-ec2-node-exporter\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"} / node_filesystem_size_bytes{job=\"baro-ec2-node-exporter\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"}))", "legendFormat": "{{ec2_role}} {{mountpoint}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}}, "overrides": []}
+              },
+              {
+                "id": 14,
+                "type": "stat",
+                "title": "EC2 Node Exporter Up",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40},
+                "targets": [
+                  {"expr": "up{job=\"baro-ec2-node-exporter\"}", "legendFormat": "{{ec2_role}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
               }
             ]
           }
@@ -830,6 +852,36 @@ additionalPrometheusRulesMap:
             annotations:
               summary: "EC2 CPU is high"
               description: "EC2 CPU 사용률이 15분 이상 85%를 초과했습니다. instance={{ $labels.instance_id }}"
+          - alert: BaroEc2NodeExporterDown
+            expr: up{job="baro-ec2-node-exporter"} == 0
+            for: 5m
+            labels:
+              source: aws
+              severity: critical
+              domain: ec2
+            annotations:
+              summary: "EC2 node-exporter is down"
+              description: "EC2 node-exporter scrape가 5분 이상 실패했습니다. role={{ $labels.ec2_role }}, target={{ $labels.instance }}"
+          - alert: BaroEc2FilesystemUsageHigh
+            expr: 100 * (1 - (node_filesystem_avail_bytes{job="baro-ec2-node-exporter",fstype!~"tmpfs|overlay|squashfs|ramfs|nsfs",mountpoint!~"/dev.*|/proc.*|/run.*|/sys.*"} / node_filesystem_size_bytes{job="baro-ec2-node-exporter",fstype!~"tmpfs|overlay|squashfs|ramfs|nsfs",mountpoint!~"/dev.*|/proc.*|/run.*|/sys.*"})) > 80
+            for: 10m
+            labels:
+              source: aws
+              severity: warning
+              domain: ec2
+            annotations:
+              summary: "EC2 filesystem usage is high"
+              description: "EC2 filesystem 사용률이 10분 이상 80%를 초과했습니다. role={{ $labels.ec2_role }}, mount={{ $labels.mountpoint }}, usage={{ $value }}%"
+          - alert: BaroEc2FilesystemUsageCritical
+            expr: 100 * (1 - (node_filesystem_avail_bytes{job="baro-ec2-node-exporter",fstype!~"tmpfs|overlay|squashfs|ramfs|nsfs",mountpoint!~"/dev.*|/proc.*|/run.*|/sys.*"} / node_filesystem_size_bytes{job="baro-ec2-node-exporter",fstype!~"tmpfs|overlay|squashfs|ramfs|nsfs",mountpoint!~"/dev.*|/proc.*|/run.*|/sys.*"})) > 90
+            for: 5m
+            labels:
+              source: aws
+              severity: critical
+              domain: ec2
+            annotations:
+              summary: "EC2 filesystem usage is critical"
+              description: "EC2 filesystem 사용률이 5분 이상 90%를 초과했습니다. role={{ $labels.ec2_role }}, mount={{ $labels.mountpoint }}, usage={{ $value }}%"
 
   baro-dev-service-observability:
     groups:
@@ -1036,6 +1088,16 @@ prometheus:
             labels:
               source: service
               service: dispatch-service
+      - job_name: baro-ec2-node-exporter
+        static_configs:
+%{ for target in ec2_node_exporter_targets ~}
+          - targets:
+              - ${target.target}
+            labels:
+              source: aws
+              domain: ec2
+              ec2_role: ${target.role}
+%{ endfor ~}
     nodeSelector:
       role: monitoring
     resources:

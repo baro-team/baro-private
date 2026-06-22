@@ -73,6 +73,24 @@ variable "dispatch_metrics_targets" {
   default     = ["dispatch-metrics.dev.barocloud.com:443"]
 }
 
+variable "ec2_node_exporter_targets" {
+  description = "EC2 node-exporter targets for AWS-side hosts reachable from the monitoring cluster through VPN. Labels identify each target role."
+  type = list(object({
+    target = string
+    role   = string
+  }))
+  default = [
+    {
+      target = "10.20.10.31:9100"
+      role   = "kafka"
+    },
+    {
+      target = "10.20.10.208:9100"
+      role   = "mosquitto"
+    }
+  ]
+}
+
 # ──────────────────────────────────────
 # airflow
 # ──────────────────────────────────────
