@@ -26,6 +26,9 @@ dev 환경에서 CloudWatch exporter로 수집하는 AWS 지표와 알람 기준
 | ElastiCache | `Evictions` | `aws_elasticache_evictions_sum` | 5분 이상 0 초과 | critical | 캐시 메모리 부족으로 데이터 축출 발생 |
 | EC2 | `StatusCheckFailed_Instance`, `StatusCheckFailed_System` | `aws_ec2_status_check_failed_instance_maximum`, `aws_ec2_status_check_failed_system_maximum` | 5분 이상 실패 | critical | 인스턴스 또는 호스트 장애 |
 | EC2 | `CPUUtilization` | `aws_ec2_cpuutilization_average` | 15분 이상 85% 초과 | warning | 인스턴스 부하 증가 |
+| EC2 filesystem | node-exporter filesystem | `node_filesystem_avail_bytes`, `node_filesystem_size_bytes` | 10분 이상 80% 초과 | warning | Kafka/Mosquitto EC2 디스크 사용량 증가 |
+| EC2 filesystem | node-exporter filesystem | `node_filesystem_avail_bytes`, `node_filesystem_size_bytes` | 5분 이상 90% 초과 | critical | Kafka/Mosquitto EC2 디스크 고갈 위험 |
+| EC2 node-exporter | Prometheus scrape | `up{job="baro-ec2-node-exporter"}` | 5분 이상 실패 | critical | EC2 filesystem 모니터링 중단 |
 
 ## Slack 알림
 
@@ -105,6 +108,8 @@ kubectl -n monitoring create secret generic alertmanager-aws-slack-webhook \
 - ElastiCache Evictions
 - EC2 CPU Utilization
 - EC2 Status Check Failed
+- EC2 Filesystem Usage
+- EC2 Node Exporter Up
 
 ## 현재 반영 위치
 
