@@ -459,10 +459,111 @@ grafana:
                 "title": "CircuitBreaker Calls",
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+              "targets": [
+                {"expr": "sum by (instance, name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"baro-gateway-service\"}[5m]))", "legendFormat": "{{instance}} {{name}} {{kind}}"}
+              ],
+              "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              },
+              {
+                "id": 6,
+                "type": "stat",
+                "title": "Service Metrics Targets Up",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 0, "y": 24},
                 "targets": [
-                  {"expr": "sum by (instance, name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"baro-gateway-service\"}[5m]))", "legendFormat": "{{instance}} {{name}} {{kind}}"}
+                  {"expr": "up{job=~\"baro-control-service|baro-dispatch-service\"}", "legendFormat": "{{service}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 7,
+                "type": "stat",
+                "title": "Vehicle Idle Ratio",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 8, "y": 24},
+                "targets": [
+                  {"expr": "sum(baro_dispatch_vehicle_status_current{status=\"idle\"}) / sum(baro_dispatch_vehicle_status_current)", "legendFormat": "idle ratio"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percentunit", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.8}, {"color": "red", "value": 0.9}]}}, "overrides": []}
+              },
+              {
+                "id": 8,
+                "type": "stat",
+                "title": "Redis Idle GEO Count",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 16, "y": 24},
+                "targets": [
+                  {"expr": "baro_dispatch_idle_geo_count", "legendFormat": "idle geo"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 9,
+                "type": "bargauge",
+                "title": "Vehicle Status Current",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+                "targets": [
+                  {"expr": "sum by (status) (baro_dispatch_vehicle_status_current)", "legendFormat": "{{status}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 10,
+                "type": "timeseries",
+                "title": "Telemetry Received Rate",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+                "targets": [
+                  {"expr": "sum by (status) (rate(baro_control_telemetry_received_total[5m]))", "legendFormat": "{{status}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              },
+              {
+                "id": 11,
+                "type": "timeseries",
+                "title": "Dispatch Vehicle State Events Rate",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38},
+                "targets": [
+                  {"expr": "sum by (status) (rate(baro_dispatch_vehicle_state_events_total[5m]))", "legendFormat": "{{status}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              },
+              {
+                "id": 12,
+                "type": "timeseries",
+                "title": "Redis Idle GEO Saves / Removes",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 38},
+                "targets": [
+                  {"expr": "sum(rate(baro_dispatch_idle_geo_saves_total[5m]))", "legendFormat": "saves"},
+                  {"expr": "sum(rate(baro_dispatch_idle_geo_removes_total[5m]))", "legendFormat": "removes"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              },
+              {
+                "id": 13,
+                "type": "timeseries",
+                "title": "Control Pipeline Failures",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 46},
+                "targets": [
+                  {"expr": "sum(increase(baro_control_telemetry_kafka_publish_failed_total[5m]))", "legendFormat": "kafka publish failed"},
+                  {"expr": "sum by (phase) (increase(baro_control_sse_send_failures_total[5m]))", "legendFormat": "sse {{phase}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 20}]}}, "overrides": []}
+              },
+              {
+                "id": 14,
+                "type": "timeseries",
+                "title": "Dispatch Candidate Not Found",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 46},
+                "targets": [
+                  {"expr": "sum(increase(baro_dispatch_idle_geo_candidate_not_found_total[5m]))", "legendFormat": "not found"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 5}, {"color": "red", "value": 20}]}}, "overrides": []}
               }
             ]
           }
