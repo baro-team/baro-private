@@ -9,6 +9,20 @@ defaultRules:
 grafana:
   nodeSelector:
     role: monitoring
+  sidecar:
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: false
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-operated.monitoring.svc:9090
+      access: proxy
+      isDefault: true
+      uid: prometheus
+      jsonData:
+        httpMethod: POST
+        timeInterval: 30s
   resources:
     limits:
       memory: 512Mi
@@ -53,7 +67,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
@@ -216,7 +230,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
@@ -389,7 +403,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
