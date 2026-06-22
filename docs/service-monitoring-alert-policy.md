@@ -29,10 +29,15 @@ Prometheus는 Gateway의 actuator Prometheus endpoint를 scrape한다.
 
 ```hcl
 gateway_metrics_scheme = "https"
-gateway_metrics_targets = []
+gateway_metrics_targets = ["internal-dev.barocloud.com:443"]
 ```
 
-`gateway_metrics_targets`에는 Load Balancer 도메인이 아니라 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록을 넣는다. Load Balancer를 scrape하면 요청마다 다른 task에 붙을 수 있어 CircuitBreaker instance 라벨이 흔들리고 알람 원인 식별이 어려워질 수 있다.
+기본값은 dev bootstrap 편의를 위한 internal ALB의 고정 도메인이다. Terraform은 internal ALB에서 `/actuator/prometheus`만 gateway-service target group으로 라우팅한다.
+
+운영 환경 및 정확한 메트릭 분석이 필요한 경우, `gateway_metrics_targets`에 로드 밸런서 도메인이 아닌 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록을 설정해야 한다. 로드 밸런서를 scrape하면 매 요청마다 다른 task로 라우팅될 수 있으므로 다음 문제가 발생한다.
+
+1. 카운터 메트릭 왜곡: 각 task의 카운터 값이 달라 `rate()`나 `increase()` 계산 시 카운터 리셋으로 오인되어 메트릭이 왜곡될 수 있다.
+2. 상태 메트릭 플래핑: CircuitBreaker 상태(`resilience4j_circuitbreaker_state`) 같은 Gauge 메트릭이 매 scrape마다 달라져 오경보가 발생할 수 있다.
 
 예시 scrape 대상:
 
