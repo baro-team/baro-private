@@ -9,6 +9,13 @@ defaultRules:
 grafana:
   nodeSelector:
     role: monitoring
+  sidecar:
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+      isDefaultDatasource: true
+      name: Prometheus
+      uid: prometheus
   resources:
     limits:
       memory: 512Mi
@@ -53,7 +60,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
@@ -216,7 +223,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
@@ -389,7 +396,7 @@ grafana:
                   "query": "prometheus",
                   "current": {
                     "text": "Prometheus",
-                    "value": "Prometheus"
+                    "value": "prometheus"
                   }
                 }
               ]
