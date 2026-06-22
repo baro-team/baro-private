@@ -44,7 +44,7 @@ variable "gateway_metrics_scheme" {
 }
 
 variable "gateway_metrics_targets" {
-  description = "Direct host[:port] targets used by Prometheus to scrape gateway-service /actuator/prometheus. Prefer per-task or internal instance targets over a load balancer domain."
+  description = "Gateway-service host[:port] targets for Prometheus /actuator/prometheus scraping. The default uses the dev internal ALB for bootstrap convenience; override with per-task or internal instance targets when accurate counter/rate and per-instance gauge metrics are required."
   type        = list(string)
   default     = ["internal-dev.barocloud.com:443"]
 }
