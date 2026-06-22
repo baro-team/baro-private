@@ -85,7 +85,7 @@ kubectl -n monitoring create secret generic alertmanager-aws-slack-webhook \
   --from-literal=webhook_url='<AWS_SLACK_INCOMING_WEBHOOK_URL>'
 ```
 
-`Watchdog`, `KubeProxyDown`, `CPUThrottlingHigh` 같은 kube-prometheus-stack 기본 알람은 AWS 알람이 아니므로 `#baro-onprem-alerts`로 전달한다.
+`Watchdog`, `CPUThrottlingHigh`, `NodeFilesystemSpaceFillingUp` 같은 kube-prometheus-stack 기본 알람은 AWS 알람이 아니므로 `#baro-onprem-alerts`로 전달한다. K3s에서 표준 scrape target으로 노출되지 않는 control-plane component 알림은 오탐 방지를 위해 비활성화한다.
 
 ## Grafana 대시보드
 

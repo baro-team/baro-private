@@ -1,3 +1,11 @@
+defaultRules:
+  disabled:
+    # K3s does not expose these control-plane components as standard scrape targets.
+    KubeProxyDown: true
+    KubeSchedulerDown: true
+    KubeControllerManagerDown: true
+    KubeEtcdDown: true
+
 grafana:
   nodeSelector:
     role: monitoring
