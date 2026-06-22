@@ -55,6 +55,14 @@ Slack 본문에는 오래 전에 발생한 알람이 지금 새로 발생한 것
 - 발생시각: `StartsAt` UTC 시각
 - 설명: 알람 annotation description
 
+Slack 알림 제목 링크는 Prometheus가 생성한 `GeneratorURL`을 사용한다. 이 URL이 클러스터 내부 주소가 아니라 실제 접근 가능한 주소로 표시되도록 Prometheus `externalUrl`을 설정한다. `/query`는 Prometheus 화면 경로이므로 `externalUrl`에는 포함하지 않는다.
+
+```yaml
+prometheus:
+  prometheusSpec:
+    externalUrl: http://192.168.203.187:30900
+```
+
 AWS 알람은 `source="aws"` 부모 라우트 아래에서 severity별 receiver로 분기한다. 따라서 AWS 알람에 새 severity가 추가되더라도 온프렘 채널로 새지 않고 AWS warning receiver로 전달된다.
 
 Slack Webhook URL은 Git에 저장하지 않고 Kubernetes Secret으로 주입한다.

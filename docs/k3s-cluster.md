@@ -49,6 +49,7 @@ Airflow는 metadata DB로 TimescaleDB를 사용하므로 Terraform에서 `depend
 
 - Grafana NodePort: `30300`
 - Prometheus NodePort: `30900`
+- Prometheus external URL: `http://192.168.203.187:30900`
 - Prometheus retention: `7d`
 - Grafana admin password는 Terraform sensitive variable로 주입
 - cloudwatch-exporter AWS 자격 증명은 Kubernetes Secret `monitoring/cloudwatch-exporter-aws-credentials`로 주입합니다.
