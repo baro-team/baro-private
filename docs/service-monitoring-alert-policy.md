@@ -29,20 +29,23 @@ Prometheus는 Gateway의 actuator Prometheus endpoint를 scrape한다.
 
 ```hcl
 gateway_metrics_scheme = "https"
-gateway_metrics_target = "dev.barocloud.com"
+gateway_metrics_targets = []
 ```
 
-실제 scrape 대상:
+`gateway_metrics_targets`에는 Load Balancer 도메인이 아니라 Gateway task 또는 내부 인스턴스의 직접 접근 가능한 `host:port` 목록을 넣는다. Load Balancer를 scrape하면 요청마다 다른 task에 붙을 수 있어 CircuitBreaker instance 라벨이 흔들리고 알람 원인 식별이 어려워질 수 있다.
+
+예시 scrape 대상:
 
 ```text
-https://dev.barocloud.com/actuator/prometheus
+https://10.20.10.10:8080/actuator/prometheus
+https://10.20.10.11:8080/actuator/prometheus
 ```
 
 환경별로 대상이 다르면 Terraform 변수로 덮어쓴다.
 
 ```bash
 TF_VAR_gateway_metrics_scheme='https' \
-TF_VAR_gateway_metrics_target='dev.barocloud.com' \
+TF_VAR_gateway_metrics_targets='["10.20.10.10:8080","10.20.10.11:8080"]' \
 terraform apply
 ```
 
@@ -77,6 +80,7 @@ GATEWAY_MANAGEMENT_ENDPOINTS=health,info,metrics,prometheus
 ## 적용 후 확인 절차
 
 1. Prometheus `/targets`에서 `baro-gateway-service` target이 UP인지 확인한다.
+   - target은 Gateway task/instance별로 보여야 한다.
 2. Prometheus `/graph`에서 다음 지표가 수집되는지 확인한다.
    - `resilience4j_circuitbreaker_state`
    - `resilience4j_circuitbreaker_failure_rate`

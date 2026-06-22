@@ -394,7 +394,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
                 "targets": [
-                  {"expr": "up{job=\"baro-gateway-service\"}", "legendFormat": "gateway"}
+                  {"expr": "up{job=\"baro-gateway-service\"}", "legendFormat": "{{instance}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
               },
@@ -405,7 +405,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0},
                 "targets": [
-                  {"expr": "max by (name, state) (resilience4j_circuitbreaker_state{job=\"baro-gateway-service\"})", "legendFormat": "{{name}} {{state}}"}
+                  {"expr": "resilience4j_circuitbreaker_state{job=\"baro-gateway-service\"}", "legendFormat": "{{instance}} {{name}} {{state}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
               },
@@ -416,7 +416,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
                 "targets": [
-                  {"expr": "max by (name) (resilience4j_circuitbreaker_failure_rate{job=\"baro-gateway-service\"})", "legendFormat": "{{name}}"}
+                  {"expr": "resilience4j_circuitbreaker_failure_rate{job=\"baro-gateway-service\"}", "legendFormat": "{{instance}} {{name}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 50}]}}, "overrides": []}
               },
@@ -427,7 +427,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
                 "targets": [
-                  {"expr": "max by (name) (resilience4j_circuitbreaker_slow_call_rate{job=\"baro-gateway-service\"})", "legendFormat": "{{name}}"}
+                  {"expr": "resilience4j_circuitbreaker_slow_call_rate{job=\"baro-gateway-service\"}", "legendFormat": "{{instance}} {{name}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 50}]}}, "overrides": []}
               },
@@ -438,7 +438,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
                 "targets": [
-                  {"expr": "sum by (name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"baro-gateway-service\"}[5m]))", "legendFormat": "{{name}} {{kind}}"}
+                  {"expr": "sum by (instance, name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"baro-gateway-service\"}[5m]))", "legendFormat": "{{instance}} {{name}} {{kind}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               }
@@ -720,7 +720,7 @@ additionalPrometheusRulesMap:
               summary: "gateway-service metrics target is down"
               description: "gateway-service /actuator/prometheus scrape가 3분 이상 실패했습니다. target={{ $labels.instance }}"
           - alert: BaroGatewayCircuitBreakerOpen
-            expr: max by (name) (resilience4j_circuitbreaker_state{job="baro-gateway-service", state="open"}) == 1
+            expr: resilience4j_circuitbreaker_state{job="baro-gateway-service", state="open"} == 1
             for: 1m
             labels:
               source: service
@@ -729,9 +729,9 @@ additionalPrometheusRulesMap:
               service: gateway-service
             annotations:
               summary: "Gateway circuit breaker is open"
-              description: "Gateway CircuitBreaker가 1분 이상 OPEN 상태입니다. circuit_breaker={{ $labels.name }}"
+              description: "Gateway CircuitBreaker가 1분 이상 OPEN 상태입니다. instance={{ $labels.instance }}, circuit_breaker={{ $labels.name }}"
           - alert: BaroGatewayCircuitBreakerHalfOpen
-            expr: max by (name) (resilience4j_circuitbreaker_state{job="baro-gateway-service", state="half_open"}) == 1
+            expr: resilience4j_circuitbreaker_state{job="baro-gateway-service", state="half_open"} == 1
             for: 5m
             labels:
               source: service
@@ -740,9 +740,9 @@ additionalPrometheusRulesMap:
               service: gateway-service
             annotations:
               summary: "Gateway circuit breaker is half-open"
-              description: "Gateway CircuitBreaker가 5분 이상 HALF_OPEN 상태입니다. circuit_breaker={{ $labels.name }}"
+              description: "Gateway CircuitBreaker가 5분 이상 HALF_OPEN 상태입니다. instance={{ $labels.instance }}, circuit_breaker={{ $labels.name }}"
           - alert: BaroGatewayCircuitBreakerFailureRateHigh
-            expr: max by (name) (resilience4j_circuitbreaker_failure_rate{job="baro-gateway-service"}) >= 50
+            expr: resilience4j_circuitbreaker_failure_rate{job="baro-gateway-service"} >= 50
             for: 5m
             labels:
               source: service
@@ -751,9 +751,9 @@ additionalPrometheusRulesMap:
               service: gateway-service
             annotations:
               summary: "Gateway circuit breaker failure rate is high"
-              description: "Gateway CircuitBreaker 실패율이 5분 이상 50% 이상입니다. circuit_breaker={{ $labels.name }}"
+              description: "Gateway CircuitBreaker 실패율이 5분 이상 50% 이상입니다. instance={{ $labels.instance }}, circuit_breaker={{ $labels.name }}"
           - alert: BaroGatewayCircuitBreakerSlowCallRateHigh
-            expr: max by (name) (resilience4j_circuitbreaker_slow_call_rate{job="baro-gateway-service"}) >= 50
+            expr: resilience4j_circuitbreaker_slow_call_rate{job="baro-gateway-service"} >= 50
             for: 5m
             labels:
               source: service
@@ -762,7 +762,7 @@ additionalPrometheusRulesMap:
               service: gateway-service
             annotations:
               summary: "Gateway circuit breaker slow call rate is high"
-              description: "Gateway CircuitBreaker slow call 비율이 5분 이상 50% 이상입니다. circuit_breaker={{ $labels.name }}"
+              description: "Gateway CircuitBreaker slow call 비율이 5분 이상 50% 이상입니다. instance={{ $labels.instance }}, circuit_breaker={{ $labels.name }}"
 
 prometheus:
   service:
@@ -776,7 +776,9 @@ prometheus:
         metrics_path: /actuator/prometheus
         static_configs:
           - targets:
-              - ${gateway_metrics_target}
+%{ for target in gateway_metrics_targets ~}
+              - ${target}
+%{ endfor ~}
             labels:
               source: service
               service: gateway-service

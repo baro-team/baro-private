@@ -35,7 +35,7 @@ Local backend를 사용하므로 self-hosted runner와 수동 작업은 같은 s
 | Grafana admin password | `TF_VAR_grafana_admin_password` |
 | Prometheus external URL | `TF_VAR_prometheus_external_url` |
 | Gateway metrics scheme | `TF_VAR_gateway_metrics_scheme` |
-| Gateway metrics target | `TF_VAR_gateway_metrics_target` |
+| Gateway metrics targets | `TF_VAR_gateway_metrics_targets` |
 | Airflow DB password | `TF_VAR_airflow_db_password` |
 | TimescaleDB password | `TF_VAR_timescaledb_password` |
 | K3s kubeconfig path | `TF_VAR_kubeconfig_path` |
