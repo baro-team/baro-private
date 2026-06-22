@@ -580,7 +580,7 @@ alertmanager:
       receiver: onprem-warning
       routes:
         - matchers:
-            - alertname=~"Watchdog|InfoInhibitor|CPUThrottlingHigh"
+            - alertname=~"Watchdog|InfoInhibitor"
           receiver: blackhole
         - matchers:
             - source="aws"
