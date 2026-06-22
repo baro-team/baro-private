@@ -75,8 +75,9 @@ prometheusRule:
       expr: probe_success == 0
       for: 3m
       labels:
-        source: blackbox
+        source: service
         severity: critical
+        domain: blackbox
       annotations:
         summary: "Blackbox probe failed"
         description: "Blackbox probe가 3분 이상 실패했습니다. target={{ $labels.instance }}, job={{ $labels.job }}"

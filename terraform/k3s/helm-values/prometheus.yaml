@@ -847,7 +847,7 @@ additionalPrometheusRulesMap:
               summary: "Vehicle idle ratio is high"
               description: "차량 IDLE 비율이 5분 이상 90%를 초과했습니다. ratio={{ $value }}"
           - alert: BaroVehicleActiveFleetLow
-            expr: sum(baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}) < 10 and sum(baro_dispatch_vehicle_status_current) > 100
+            expr: (sum(baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}) or vector(0)) < 10 and sum(baro_dispatch_vehicle_status_current) > 100
             for: 5m
             labels:
               source: service

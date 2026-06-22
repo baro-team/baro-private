@@ -82,7 +82,7 @@ Blackbox exporter는 외부 관점의 생존 여부를 확인한다.
 
 | 알람 | Prometheus 지표 | 기준 | 등급 |
 |---|---|---:|---|
-| Blackbox probe failed | `probe_success` | 3분 이상 0 | critical |
+| Blackbox probe failed | `probe_success` | 3분 이상 0, `source="service"`로 서비스 알림 채널 라우팅 | critical |
 
 ## Telemetry / Fleet / Dispatch 도메인 알람 기준
 
@@ -93,7 +93,7 @@ Blackbox exporter는 외부 관점의 생존 여부를 확인한다.
 | Kafka publish failure | `baro_control_telemetry_kafka_publish_failed_total` | 5분 증가량 > 0 | warning |
 | SSE send failures high | `baro_control_sse_send_failures_total` | 5분 증가량 > 20 | warning |
 | Vehicle idle ratio high | `sum(baro_dispatch_vehicle_status_current{status="idle"}) / sum(baro_dispatch_vehicle_status_current)` | 5분 이상 90% 초과 | warning |
-| Active fleet low | `baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}` | 전체 100대 이상인데 active 10대 미만 | warning |
+| Active fleet low | `(sum(baro_dispatch_vehicle_status_current{status=~"driving|moving_to_pickup|relocating"}) or vector(0))` | 전체 100대 이상인데 active 10대 미만 | warning |
 | Idle GEO saves spike | `baro_dispatch_idle_geo_saves_total` | 5분 증가량 > 500 | warning |
 | Idle GEO pool empty | `baro_dispatch_idle_geo_count` | 5분 이상 0 | warning |
 | Candidate not found high | `baro_dispatch_idle_geo_candidate_not_found_total` | 5분 증가량 > 20 | warning |
