@@ -9,11 +9,348 @@ grafana:
   service:
     type: NodePort
     nodePort: 30300
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: baro
+          orgId: 1
+          folder: Baro
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/baro
+  dashboards:
+    baro:
+      aws-observability:
+        json: |
+          {
+            "uid": "baro-aws-observability",
+            "title": "Baro AWS Observability",
+            "tags": ["baro", "aws", "dev"],
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "1m",
+            "time": {
+              "from": "now-6h",
+              "to": "now"
+            },
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "current": {
+                    "text": "Prometheus",
+                    "value": "Prometheus"
+                  }
+                }
+              ]
+            },
+            "panels": [
+              {
+                "id": 1,
+                "type": "timeseries",
+                "title": "ALB Target 5xx",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+                "targets": [
+                  {"expr": "sum by (load_balancer) (aws_applicationelb_httpcode_target_5_xx_count_sum)", "legendFormat": "{{load_balancer}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 2,
+                "type": "timeseries",
+                "title": "ALB Target Response Time",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+                "targets": [
+                  {"expr": "avg by (load_balancer) (aws_applicationelb_target_response_time_average)", "legendFormat": "{{load_balancer}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+              },
+              {
+                "id": 3,
+                "type": "timeseries",
+                "title": "ECS CPU Utilization",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                "targets": [
+                  {"expr": "avg by (service_name) (aws_ecs_cpuutilization_average)", "legendFormat": "{{service_name}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}]}}, "overrides": []}
+              },
+              {
+                "id": 4,
+                "type": "timeseries",
+                "title": "ECS Memory Utilization",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+                "targets": [
+                  {"expr": "avg by (service_name) (aws_ecs_memory_utilization_average)", "legendFormat": "{{service_name}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 85}]}}, "overrides": []}
+              },
+              {
+                "id": 5,
+                "type": "timeseries",
+                "title": "RDS CPU Utilization",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+                "targets": [
+                  {"expr": "avg by (dbinstance_identifier) (aws_rds_cpuutilization_average)", "legendFormat": "{{dbinstance_identifier}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}]}}, "overrides": []}
+              },
+              {
+                "id": 6,
+                "type": "timeseries",
+                "title": "RDS Free Storage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+                "targets": [
+                  {"expr": "avg by (dbinstance_identifier) (aws_rds_free_storage_space_average)", "legendFormat": "{{dbinstance_identifier}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "bytes", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 10737418240}]}}, "overrides": []}
+              },
+              {
+                "id": 7,
+                "type": "timeseries",
+                "title": "RDS Connections",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+                "targets": [
+                  {"expr": "avg by (dbinstance_identifier) (aws_rds_database_connections_average)", "legendFormat": "{{dbinstance_identifier}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}]}}, "overrides": []}
+              },
+              {
+                "id": 8,
+                "type": "timeseries",
+                "title": "ElastiCache CPU Utilization",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+                "targets": [
+                  {"expr": "avg by (cache_cluster_id) (aws_elasticache_cpuutilization_average)", "legendFormat": "{{cache_cluster_id}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}]}}, "overrides": []}
+              },
+              {
+                "id": 9,
+                "type": "timeseries",
+                "title": "ElastiCache Memory Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 8, "y": 24},
+                "targets": [
+                  {"expr": "avg by (cache_cluster_id) (aws_elasticache_database_memory_usage_percentage_average)", "legendFormat": "{{cache_cluster_id}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 85}]}}, "overrides": []}
+              },
+              {
+                "id": 10,
+                "type": "timeseries",
+                "title": "ElastiCache Evictions",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 8, "x": 16, "y": 24},
+                "targets": [
+                  {"expr": "sum by (cache_cluster_id) (aws_elasticache_evictions_sum)", "legendFormat": "{{cache_cluster_id}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 11,
+                "type": "timeseries",
+                "title": "EC2 CPU Utilization",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+                "targets": [
+                  {"expr": "avg by (instance_id) (aws_ec2_cpuutilization_average)", "legendFormat": "{{instance_id}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 85}]}}, "overrides": []}
+              },
+              {
+                "id": 12,
+                "type": "timeseries",
+                "title": "EC2 Status Check Failed",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+                "targets": [
+                  {"expr": "max by (instance_id) (aws_ec2_status_check_failed_instance_maximum)", "legendFormat": "instance {{instance_id}}"},
+                  {"expr": "max by (instance_id) (aws_ec2_status_check_failed_system_maximum)", "legendFormat": "system {{instance_id}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
+              }
+            ]
+          }
 
 alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: [alertname, domain, severity]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: slack-warning
+      routes:
+        - matchers:
+            - severity="critical"
+          receiver: slack-critical
+          repeat_interval: 1h
+        - matchers:
+            - severity="warning"
+          receiver: slack-warning
+    receivers:
+      - name: slack-critical
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook_url
+            channel: "#baro-alerts"
+            send_resolved: true
+            title: "[CRITICAL] {{ .CommonLabels.alertname }}"
+            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
+      - name: slack-warning
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook_url
+            channel: "#baro-alerts"
+            send_resolved: true
+            title: "[WARNING] {{ .CommonLabels.alertname }}"
+            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
   alertmanagerSpec:
     nodeSelector:
       role: monitoring
+    secrets:
+      - alertmanager-slack-webhook
+
+additionalPrometheusRulesMap:
+  baro-dev-aws-observability:
+    groups:
+      - name: baro.dev.aws.alb
+        rules:
+          - alert: BaroAlbTarget5xxHigh
+            expr: sum by (load_balancer) (aws_applicationelb_httpcode_target_5_xx_count_sum) >= 10
+            for: 10m
+            labels:
+              severity: critical
+              domain: gateway
+            annotations:
+              summary: "ALB target 5xx count is high"
+              description: "ALB target 5xx가 10분 이상 10건 이상 발생했습니다. load_balancer={{ $labels.load_balancer }}"
+          - alert: BaroAlbTargetResponseTimeHigh
+            expr: avg by (load_balancer) (aws_applicationelb_target_response_time_average) > 2
+            for: 10m
+            labels:
+              severity: warning
+              domain: gateway
+            annotations:
+              summary: "ALB target response time is high"
+              description: "ALB target 평균 응답 시간이 10분 이상 2초를 초과했습니다. load_balancer={{ $labels.load_balancer }}"
+
+      - name: baro.dev.aws.ecs
+        rules:
+          - alert: BaroEcsCpuHigh
+            expr: avg by (cluster_name, service_name) (aws_ecs_cpuutilization_average) > 80
+            for: 10m
+            labels:
+              severity: warning
+              domain: ecs
+            annotations:
+              summary: "ECS service CPU is high"
+              description: "ECS 서비스 CPU 사용률이 10분 이상 80%를 초과했습니다. cluster={{ $labels.cluster_name }}, service={{ $labels.service_name }}"
+          - alert: BaroEcsMemoryHigh
+            expr: avg by (cluster_name, service_name) (aws_ecs_memory_utilization_average) > 85
+            for: 10m
+            labels:
+              severity: warning
+              domain: ecs
+            annotations:
+              summary: "ECS service memory is high"
+              description: "ECS 서비스 메모리 사용률이 10분 이상 85%를 초과했습니다. cluster={{ $labels.cluster_name }}, service={{ $labels.service_name }}"
+
+      - name: baro.dev.aws.rds
+        rules:
+          - alert: BaroRdsCpuHigh
+            expr: avg by (dbinstance_identifier) (aws_rds_cpuutilization_average) > 80
+            for: 15m
+            labels:
+              severity: warning
+              domain: rds
+            annotations:
+              summary: "RDS CPU is high"
+              description: "RDS CPU 사용률이 15분 이상 80%를 초과했습니다. db={{ $labels.dbinstance_identifier }}"
+          - alert: BaroRdsFreeStorageLow
+            expr: avg by (dbinstance_identifier) (aws_rds_free_storage_space_average) < 10737418240
+            for: 15m
+            labels:
+              severity: critical
+              domain: rds
+            annotations:
+              summary: "RDS free storage is low"
+              description: "RDS 여유 스토리지가 15분 이상 10GiB 미만입니다. db={{ $labels.dbinstance_identifier }}"
+          - alert: BaroRdsConnectionsHigh
+            expr: avg by (dbinstance_identifier) (aws_rds_database_connections_average) > 80
+            for: 15m
+            labels:
+              severity: warning
+              domain: rds
+            annotations:
+              summary: "RDS database connections are high"
+              description: "RDS 연결 수가 15분 이상 80개를 초과했습니다. db={{ $labels.dbinstance_identifier }}"
+
+      - name: baro.dev.aws.elasticache
+        rules:
+          - alert: BaroRedisCpuHigh
+            expr: avg by (cache_cluster_id) (aws_elasticache_cpuutilization_average) > 80
+            for: 10m
+            labels:
+              severity: warning
+              domain: redis
+            annotations:
+              summary: "ElastiCache CPU is high"
+              description: "ElastiCache CPU 사용률이 10분 이상 80%를 초과했습니다. cluster={{ $labels.cache_cluster_id }}"
+          - alert: BaroRedisMemoryHigh
+            expr: avg by (cache_cluster_id) (aws_elasticache_database_memory_usage_percentage_average) > 85
+            for: 10m
+            labels:
+              severity: warning
+              domain: redis
+            annotations:
+              summary: "ElastiCache memory usage is high"
+              description: "ElastiCache 메모리 사용률이 10분 이상 85%를 초과했습니다. cluster={{ $labels.cache_cluster_id }}"
+          - alert: BaroRedisEvictionsDetected
+            expr: sum by (cache_cluster_id) (aws_elasticache_evictions_sum) > 0
+            for: 5m
+            labels:
+              severity: critical
+              domain: redis
+            annotations:
+              summary: "ElastiCache evictions detected"
+              description: "ElastiCache eviction이 발생했습니다. cluster={{ $labels.cache_cluster_id }}"
+
+      - name: baro.dev.aws.ec2
+        rules:
+          - alert: BaroEc2StatusCheckFailed
+            expr: max by (instance_id) (aws_ec2_status_check_failed_instance_maximum) > 0 or max by (instance_id) (aws_ec2_status_check_failed_system_maximum) > 0
+            for: 5m
+            labels:
+              severity: critical
+              domain: ec2
+            annotations:
+              summary: "EC2 status check failed"
+              description: "EC2 status check가 5분 이상 실패했습니다. instance={{ $labels.instance_id }}"
+          - alert: BaroEc2CpuHigh
+            expr: avg by (instance_id) (aws_ec2_cpuutilization_average) > 85
+            for: 15m
+            labels:
+              severity: warning
+              domain: ec2
+            annotations:
+              summary: "EC2 CPU is high"
+              description: "EC2 CPU 사용률이 15분 이상 85%를 초과했습니다. instance={{ $labels.instance_id }}"
 
 prometheus:
   service:
