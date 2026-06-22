@@ -31,6 +31,12 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "prometheus_external_url" {
+  description = "Externally reachable Prometheus base URL used in alert links"
+  type        = string
+  default     = "http://192.168.203.187:30900"
+}
+
 # ──────────────────────────────────────
 # airflow
 # ──────────────────────────────────────

@@ -223,6 +223,7 @@ alertmanager:
             channel: "#baro-aws-alerts"
             send_resolved: true
             title: "[AWS][CRITICAL] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
             text: |-
               {{ range .Alerts }}• 상태: {{ .Status }}
               • 발생시각(UTC): {{ .StartsAt }}
@@ -234,6 +235,7 @@ alertmanager:
             channel: "#baro-aws-alerts"
             send_resolved: true
             title: "[AWS][WARNING] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
             text: |-
               {{ range .Alerts }}• 상태: {{ .Status }}
               • 발생시각(UTC): {{ .StartsAt }}
@@ -245,6 +247,7 @@ alertmanager:
             channel: "#baro-onprem-alerts"
             send_resolved: true
             title: "[ONPREM][CRITICAL] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
             text: |-
               {{ range .Alerts }}• 상태: {{ .Status }}
               • 발생시각(UTC): {{ .StartsAt }}
@@ -256,6 +259,7 @@ alertmanager:
             channel: "#baro-onprem-alerts"
             send_resolved: true
             title: "[ONPREM][WARNING] {{ .CommonLabels.alertname }}"
+            title_link: "{{ (index .Alerts 0).GeneratorURL }}"
             text: |-
               {{ range .Alerts }}• 상태: {{ .Status }}
               • 발생시각(UTC): {{ .StartsAt }}
@@ -411,6 +415,7 @@ prometheus:
     type: NodePort
     nodePort: 30900
   prometheusSpec:
+    externalUrl: ${prometheus_external_url}
     nodeSelector:
       role: monitoring
     resources:
