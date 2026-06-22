@@ -186,6 +186,179 @@ grafana:
               }
             ]
           }
+      onprem-observability:
+        json: |
+          {
+            "uid": "baro-onprem-observability",
+            "title": "Baro On-prem Observability",
+            "tags": ["baro", "onprem", "k3s"],
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "1m",
+            "time": {
+              "from": "now-6h",
+              "to": "now"
+            },
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "current": {
+                    "text": "Prometheus",
+                    "value": "Prometheus"
+                  }
+                }
+              ]
+            },
+            "panels": [
+              {
+                "id": 1,
+                "type": "stat",
+                "title": "K3s Ready Nodes",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+                "targets": [
+                  {"expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "legendFormat": "ready"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 3}]}}, "overrides": []}
+              },
+              {
+                "id": 2,
+                "type": "stat",
+                "title": "Running Pods",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+                "targets": [
+                  {"expr": "sum(kube_pod_status_phase{phase=\"Running\",namespace=~\"monitoring|database|airflow\"})", "legendFormat": "running"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 3,
+                "type": "stat",
+                "title": "Pod Restarts Last 15m",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+                "targets": [
+                  {"expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"monitoring|database|airflow\"}[15m]))", "legendFormat": "restarts"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 3}]}}, "overrides": []}
+              },
+              {
+                "id": 4,
+                "type": "stat",
+                "title": "Unavailable Pods",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+                "targets": [
+                  {"expr": "sum(kube_pod_status_phase{phase=~\"Pending|Failed|Unknown\",namespace=~\"monitoring|database|airflow\"})", "legendFormat": "unavailable"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 5,
+                "type": "timeseries",
+                "title": "Node CPU Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+                "targets": [
+                  {"expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))", "legendFormat": "{{instance}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}}, "overrides": []}
+              },
+              {
+                "id": 6,
+                "type": "timeseries",
+                "title": "Node Memory Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+                "targets": [
+                  {"expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))", "legendFormat": "{{instance}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}}, "overrides": []}
+              },
+              {
+                "id": 7,
+                "type": "timeseries",
+                "title": "Root Filesystem Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+                "targets": [
+                  {"expr": "100 * (1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"}))", "legendFormat": "{{instance}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}}, "overrides": []}
+              },
+              {
+                "id": 8,
+                "type": "timeseries",
+                "title": "PVC Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+                "targets": [
+                  {"expr": "100 * (kubelet_volume_stats_used_bytes{namespace=~\"database|airflow|monitoring\"} / kubelet_volume_stats_capacity_bytes{namespace=~\"database|airflow|monitoring\"})", "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}, {"color": "red", "value": 90}]}}, "overrides": []}
+              },
+              {
+                "id": 9,
+                "type": "timeseries",
+                "title": "Pod Restarts by Pod",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
+                "targets": [
+                  {"expr": "sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{namespace=~\"monitoring|database|airflow\"}[1h]))", "legendFormat": "{{namespace}}/{{pod}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 10,
+                "type": "timeseries",
+                "title": "Workload Ready Pods",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22},
+                "targets": [
+                  {"expr": "sum by (namespace) (kube_pod_status_ready{condition=\"true\",namespace=~\"monitoring|database|airflow\"})", "legendFormat": "{{namespace}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 11,
+                "type": "stat",
+                "title": "TimescaleDB Ready",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 0, "y": 30},
+                "targets": [
+                  {"expr": "max(kube_pod_status_ready{namespace=\"database\",pod=~\"timescaledb.*\",condition=\"true\"})", "legendFormat": "timescaledb"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+              },
+              {
+                "id": 12,
+                "type": "stat",
+                "title": "Airflow Ready Pods",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 8, "y": 30},
+                "targets": [
+                  {"expr": "sum(kube_pod_status_ready{namespace=\"airflow\",condition=\"true\"})", "legendFormat": "airflow"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 13,
+                "type": "stat",
+                "title": "Monitoring Targets Down",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 6, "w": 8, "x": 16, "y": 30},
+                "targets": [
+                  {"expr": "sum(up{namespace=~\"monitoring|database|airflow\"} == 0)", "legendFormat": "down"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
+              }
+            ]
+          }
 
 alertmanager:
   config:
