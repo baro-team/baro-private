@@ -75,6 +75,8 @@ Airflow는 metadata DB로 TimescaleDB를 사용하므로 Terraform에서 `depend
 - DAG: Git sync 사용
 - Metadata DB: TimescaleDB
 - Internal PostgreSQL, Redis, Flower 및 StatsD 비활성화
+- `dagProcessor`는 DAG parsing과 liveness check 지연을 고려해 CPU/memory limit과 liveness timeout을 여유 있게 설정
+- `triggerer`는 실제 메모리 사용량이 기존 request를 넘는 경우가 있어 request/limit을 소폭 상향
 
 Airflow DB password는 Terraform sensitive variable로 주입합니다.
 
