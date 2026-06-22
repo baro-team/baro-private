@@ -7,7 +7,11 @@ resource "helm_release" "monitoring" {
   chart      = "kube-prometheus-stack"
   version    = var.monitoring_chart_version
 
-  values = [file("${path.module}/helm-values/prometheus.yaml")]
+  values = [
+    templatefile("${path.module}/helm-values/prometheus.yaml", {
+      prometheus_external_url = var.prometheus_external_url
+    })
+  ]
 
   set_sensitive {
     name  = "grafana.adminPassword"

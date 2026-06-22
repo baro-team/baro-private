@@ -57,10 +57,18 @@ Slack 본문에는 오래 전에 발생한 알람이 지금 새로 발생한 것
 
 Slack 알림 제목 링크는 Prometheus가 생성한 `GeneratorURL`을 사용한다. 이 URL이 클러스터 내부 주소가 아니라 실제 접근 가능한 주소로 표시되도록 Prometheus `externalUrl`을 설정한다. `/query`는 Prometheus 화면 경로이므로 `externalUrl`에는 포함하지 않는다.
 
+`externalUrl`은 Terraform 변수 `prometheus_external_url`로 주입한다. 기본값은 현재 dev 네트워크에서 접근 가능한 Prometheus NodePort 주소다.
+
 ```yaml
 prometheus:
   prometheusSpec:
     externalUrl: http://192.168.203.187:30900
+```
+
+환경별로 주소가 달라지면 다음처럼 Terraform 변수로 덮어쓴다.
+
+```bash
+TF_VAR_prometheus_external_url='http://<PROMETHEUS_HOST>:30900' terraform apply
 ```
 
 AWS 알람은 `source="aws"` 부모 라우트 아래에서 severity별 receiver로 분기한다. 따라서 AWS 알람에 새 severity가 추가되더라도 온프렘 채널로 새지 않고 AWS warning receiver로 전달된다.

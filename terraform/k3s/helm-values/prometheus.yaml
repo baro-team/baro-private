@@ -415,7 +415,7 @@ prometheus:
     type: NodePort
     nodePort: 30900
   prometheusSpec:
-    externalUrl: http://192.168.203.187:30900
+    externalUrl: ${prometheus_external_url}
     nodeSelector:
       role: monitoring
     resources:
