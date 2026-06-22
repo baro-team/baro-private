@@ -12,10 +12,17 @@ grafana:
   sidecar:
     datasources:
       enabled: true
-      defaultDatasourceEnabled: true
-      isDefaultDatasource: true
-      name: Prometheus
+      defaultDatasourceEnabled: false
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-operated.monitoring.svc:9090
+      access: proxy
+      isDefault: true
       uid: prometheus
+      jsonData:
+        httpMethod: POST
+        timeInterval: 30s
   resources:
     limits:
       memory: 512Mi
