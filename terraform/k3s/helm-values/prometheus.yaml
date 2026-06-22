@@ -200,13 +200,15 @@ alertmanager:
       routes:
         - matchers:
             - source="aws"
-            - severity="critical"
-          receiver: aws-critical
-          repeat_interval: 1h
-        - matchers:
-            - source="aws"
-            - severity="warning"
           receiver: aws-warning
+          routes:
+            - matchers:
+                - severity="critical"
+              receiver: aws-critical
+              repeat_interval: 1h
+            - matchers:
+                - severity="warning"
+              receiver: aws-warning
         - matchers:
             - severity="critical"
           receiver: onprem-critical
@@ -221,28 +223,44 @@ alertmanager:
             channel: "#baro-aws-alerts"
             send_resolved: true
             title: "[AWS][CRITICAL] {{ .CommonLabels.alertname }}"
-            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
       - name: aws-warning
         slack_configs:
           - api_url_file: /etc/alertmanager/secrets/alertmanager-aws-slack-webhook/webhook_url
             channel: "#baro-aws-alerts"
             send_resolved: true
             title: "[AWS][WARNING] {{ .CommonLabels.alertname }}"
-            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
       - name: onprem-critical
         slack_configs:
           - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook_url
             channel: "#baro-onprem-alerts"
             send_resolved: true
             title: "[ONPREM][CRITICAL] {{ .CommonLabels.alertname }}"
-            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
       - name: onprem-warning
         slack_configs:
           - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook_url
             channel: "#baro-onprem-alerts"
             send_resolved: true
             title: "[ONPREM][WARNING] {{ .CommonLabels.alertname }}"
-            text: "{{ range .Alerts }}• {{ .Annotations.description }}\n{{ end }}"
+            text: |-
+              {{ range .Alerts }}• 상태: {{ .Status }}
+              • 발생시각(UTC): {{ .StartsAt }}
+              • 설명: {{ .Annotations.description }}
+              {{ end }}
   alertmanagerSpec:
     nodeSelector:
       role: monitoring

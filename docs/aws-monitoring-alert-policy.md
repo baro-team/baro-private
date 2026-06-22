@@ -49,6 +49,14 @@ source: aws
 | 온프렘 critical | `[ONPREM][CRITICAL] 알람명` | 1시간 |
 | 온프렘 warning | `[ONPREM][WARNING] 알람명` | 4시간 |
 
+Slack 본문에는 오래 전에 발생한 알람이 지금 새로 발생한 것처럼 보이지 않도록 Alertmanager가 전달한 시각 정보를 함께 표시한다.
+
+- 상태: `firing` 또는 `resolved`
+- 발생시각: `StartsAt` UTC 시각
+- 설명: 알람 annotation description
+
+AWS 알람은 `source="aws"` 부모 라우트 아래에서 severity별 receiver로 분기한다. 따라서 AWS 알람에 새 severity가 추가되더라도 온프렘 채널로 새지 않고 AWS warning receiver로 전달된다.
+
 Slack Webhook URL은 Git에 저장하지 않고 Kubernetes Secret으로 주입한다.
 
 ```bash
