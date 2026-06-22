@@ -29,21 +29,47 @@ dev 환경에서 CloudWatch exporter로 수집하는 AWS 지표와 알람 기준
 
 ## Slack 알림
 
-Alertmanager는 `critical`, `warning` 알람을 Slack으로 발송한다.
+Alertmanager는 알람의 `source` 라벨로 Slack 채널을 분리한다.
+
+| 구분 | 조건 | Slack 채널 | Webhook Secret |
+|---|---|---|---|
+| AWS 알람 | `source="aws"` | `#baro-aws-alerts` | `alertmanager-aws-slack-webhook` |
+| 온프렘/k3s 기본 알람 | `source` 없음 또는 AWS 외 알람 | `#baro-onprem-alerts` | `alertmanager-slack-webhook` |
+
+AWS 알람 룰에는 모두 아래 공통 라벨을 추가한다.
+
+```yaml
+source: aws
+```
 
 | 등급 | Slack title | 반복 주기 |
 |---|---|---:|
-| critical | `[CRITICAL] 알람명` | 1시간 |
-| warning | `[WARNING] 알람명` | 4시간 |
+| AWS critical | `[AWS][CRITICAL] 알람명` | 1시간 |
+| AWS warning | `[AWS][WARNING] 알람명` | 4시간 |
+| 온프렘 critical | `[ONPREM][CRITICAL] 알람명` | 1시간 |
+| 온프렘 warning | `[ONPREM][WARNING] 알람명` | 4시간 |
+
+Slack 본문에는 오래 전에 발생한 알람이 지금 새로 발생한 것처럼 보이지 않도록 Alertmanager가 전달한 시각 정보를 함께 표시한다.
+
+- 상태: `firing` 또는 `resolved`
+- 발생시각: `StartsAt` UTC 시각
+- 설명: 알람 annotation description
+
+AWS 알람은 `source="aws"` 부모 라우트 아래에서 severity별 receiver로 분기한다. 따라서 AWS 알람에 새 severity가 추가되더라도 온프렘 채널로 새지 않고 AWS warning receiver로 전달된다.
 
 Slack Webhook URL은 Git에 저장하지 않고 Kubernetes Secret으로 주입한다.
 
 ```bash
+# 기존 온프렘/k3s 기본 알람 채널: #baro-onprem-alerts
 kubectl -n monitoring create secret generic alertmanager-slack-webhook \
-  --from-literal=webhook_url='<SLACK_INCOMING_WEBHOOK_URL>'
+  --from-literal=webhook_url='<ONPREM_SLACK_INCOMING_WEBHOOK_URL>'
+
+# AWS 알람 채널: #baro-aws-alerts
+kubectl -n monitoring create secret generic alertmanager-aws-slack-webhook \
+  --from-literal=webhook_url='<AWS_SLACK_INCOMING_WEBHOOK_URL>'
 ```
 
-현재 Alertmanager 설정의 기본 채널명은 `#baro-alerts`다. Slack Incoming Webhook이 특정 채널에 고정되어 있으면 Webhook 설정을 우선 따른다.
+`Watchdog`, `KubeProxyDown`, `CPUThrottlingHigh` 같은 kube-prometheus-stack 기본 알람은 AWS 알람이 아니므로 `#baro-onprem-alerts`로 전달한다.
 
 ## Grafana 대시보드
 
