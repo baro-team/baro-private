@@ -1,7 +1,7 @@
 image:
   registry: docker.io
   repository: timescale/timescaledb-ha
-  tag: 2.23.1-pg17
+  tag: pg17
   pullPolicy: IfNotPresent
 
 nodeSelector:
