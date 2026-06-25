@@ -1,0 +1,38 @@
+kafkaServer:
+%{ for server in kafka_servers ~}
+  - ${server}
+%{ endfor ~}
+
+extraArgs:
+  - --topic.filter=${topic_filter}
+  - --group.filter=${group_filter}
+
+kafkaLabels:
+  env: dev
+  domain: kafka
+
+hostAliases:
+  - ip: "${kafka_server_ip}"
+    hostnames:
+      - kafka.baro.internal
+
+prometheus:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 15s
+    additionalLabels:
+      release: monitoring
+
+nodeSelector:
+  role: monitoring
+
+resources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+kafka:
+  enabled: false
