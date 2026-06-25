@@ -76,9 +76,10 @@ resource "helm_release" "kafka_exporter" {
 
   values = [
     templatefile("${path.module}/helm-values/kafka-exporter.yaml", {
-      kafka_servers = var.kafka_exporter_kafka_servers
-      topic_filter  = var.kafka_exporter_topic_filter
-      group_filter  = var.kafka_exporter_group_filter
+      kafka_servers   = var.kafka_exporter_kafka_servers
+      kafka_server_ip = var.kafka_server_ip
+      topic_filter    = var.kafka_exporter_topic_filter
+      group_filter    = var.kafka_exporter_group_filter
     })
   ]
 

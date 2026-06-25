@@ -103,6 +103,12 @@ variable "kafka_exporter_kafka_servers" {
   default     = ["kafka.baro.internal:9092"]
 }
 
+variable "kafka_server_ip" {
+  description = "Kafka broker private IP used by monitoring components when private DNS is unavailable"
+  type        = string
+  default     = "10.20.10.31"
+}
+
 variable "kafka_exporter_topic_filter" {
   description = "Kafka topic regex collected by prometheus-kafka-exporter"
   type        = string

@@ -19,6 +19,22 @@ grafana:
                   "type": "datasource",
                   "query": "prometheus",
                   "current": {"text": "Prometheus", "value": "prometheus"}
+                },
+                {
+                  "name": "topic",
+                  "type": "query",
+                  "datasource": {"type": "prometheus", "uid": "$datasource"},
+                  "definition": "label_values(kafka_consumergroup_lag, topic)",
+                  "query": "label_values(kafka_consumergroup_lag, topic)",
+                  "current": {"text": "vehicle-data-topic", "value": "vehicle-data-topic"}
+                },
+                {
+                  "name": "consumergroup",
+                  "type": "query",
+                  "datasource": {"type": "prometheus", "uid": "$datasource"},
+                  "definition": "label_values(kafka_consumergroup_lag{topic=\"$topic\"}, consumergroup)",
+                  "query": "label_values(kafka_consumergroup_lag{topic=\"$topic\"}, consumergroup)",
+                  "current": {"text": "dispatch-service", "value": "dispatch-service"}
                 }
               ]
             },
@@ -30,7 +46,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
                 "targets": [
-                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_messagesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"vehicle-data-topic\"}[2m]))", "legendFormat": "vehicle-data-topic messages/s"}
+                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_messagesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"$topic\"}[2m]))", "legendFormat": "$topic messages/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -41,7 +57,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
                 "targets": [
-                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_bytesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"vehicle-data-topic\"}[2m]))", "legendFormat": "vehicle-data-topic bytes/s"}
+                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_bytesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"$topic\"}[2m]))", "legendFormat": "$topic bytes/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
               },
@@ -52,7 +68,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
                 "targets": [
-                  {"expr": "sum(kafka_consumergroup_lag{topic=\"vehicle-data-topic\",consumergroup=\"dispatch-service\"})", "legendFormat": "dispatch-service lag"}
+                  {"expr": "sum(kafka_consumergroup_lag{topic=\"$topic\",consumergroup=\"$consumergroup\"})", "legendFormat": "$consumergroup lag"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1000}, {"color": "red", "value": 10000}]}}, "overrides": []}
               },
@@ -63,7 +79,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
                 "targets": [
-                  {"expr": "kafka_consumergroup_lag{topic=\"vehicle-data-topic\",consumergroup=\"dispatch-service\"}", "legendFormat": "partition {{partition}}"}
+                  {"expr": "kafka_consumergroup_lag{topic=\"$topic\",consumergroup=\"$consumergroup\"}", "legendFormat": "partition {{partition}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
               },
