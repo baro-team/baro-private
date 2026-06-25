@@ -46,7 +46,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
                 "targets": [
-                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_messagesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"$topic\"}[2m]))", "legendFormat": "$topic messages/s"}
+                  {"expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_messagesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic!=\"__consumer_offsets\"}[2m]))", "legendFormat": "{{topic}} messages/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -57,7 +57,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
                 "targets": [
-                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_bytesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"$topic\"}[2m]))", "legendFormat": "$topic bytes/s"}
+                  {"expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_bytesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic!=\"__consumer_offsets\"}[2m]))", "legendFormat": "{{topic}} bytes/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
               },
