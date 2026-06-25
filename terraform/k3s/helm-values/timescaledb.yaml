@@ -1,6 +1,6 @@
 image:
   registry: docker.io
-  repository: timescale/timescaledb-ha
+  repository: timescale/timescaledb
   tag: 2.23.1-pg17
   pullPolicy: IfNotPresent
 
