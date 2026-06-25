@@ -90,7 +90,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
                 "targets": [
-                  {"expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",mode=\"idle\"}[1m])))", "legendFormat": "node cpu"},
+                  {"expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",mode=\"idle\"}[$__rate_interval])))", "legendFormat": "node cpu"},
                   {"expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"} / node_filesystem_size_bytes{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"}))", "legendFormat": "disk {{mountpoint}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []}
@@ -102,8 +102,8 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
                 "targets": [
-                  {"expr": "sum(rate(node_network_receive_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[1m]))", "legendFormat": "rx"},
-                  {"expr": "sum(rate(node_network_transmit_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[1m]))", "legendFormat": "tx"}
+                  {"expr": "sum(rate(node_network_receive_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[$__rate_interval]))", "legendFormat": "rx"},
+                  {"expr": "sum(rate(node_network_transmit_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[$__rate_interval]))", "legendFormat": "tx"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
               },
@@ -137,7 +137,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
                 "targets": [
-                  {"expr": "sum by (name) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",result=\"success\"}[1m]))", "legendFormat": "{{name}} records/s"}
+                  {"expr": "sum by (name) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",result=\"success\"}[$__rate_interval]))", "legendFormat": "{{name}} records/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -148,7 +148,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
                 "targets": [
-                  {"expr": "sum by (name) (rate(spring_kafka_listener_seconds_sum{job=\"baro-dispatch-service\",result=\"success\"}[1m])) / sum by (name) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",result=\"success\"}[1m]))", "legendFormat": "{{name}} avg"}
+                  {"expr": "sum by (name) (rate(spring_kafka_listener_seconds_sum{job=\"baro-dispatch-service\",result=\"success\"}[$__rate_interval])) / sum by (name) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",result=\"success\"}[$__rate_interval]))", "legendFormat": "{{name}} avg"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
               },
@@ -159,7 +159,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40},
                 "targets": [
-                  {"expr": "sum by (name, exception) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",exception!=\"none\"}[1m]))", "legendFormat": "{{name}} {{exception}}"}
+                  {"expr": "sum by (name, exception) (rate(spring_kafka_listener_seconds_count{job=\"baro-dispatch-service\",exception!=\"none\"}[$__rate_interval]))", "legendFormat": "{{name}} {{exception}}"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -170,7 +170,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40},
                 "targets": [
-                  {"expr": "sum by (command) (rate(lettuce_command_completion_seconds_sum{job=\"baro-dispatch-service\"}[1m])) / sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"baro-dispatch-service\"}[1m]))", "legendFormat": "{{command}} avg"}
+                  {"expr": "sum by (command) (rate(lettuce_command_completion_seconds_sum{job=\"baro-dispatch-service\"}[$__rate_interval])) / sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"baro-dispatch-service\"}[$__rate_interval]))", "legendFormat": "{{command}} avg"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
               },
@@ -181,7 +181,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 48},
                 "targets": [
-                  {"expr": "sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"baro-dispatch-service\"}[1m]))", "legendFormat": "{{command}} ops/s"}
+                  {"expr": "sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"baro-dispatch-service\"}[$__rate_interval]))", "legendFormat": "{{command}} ops/s"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
               },
@@ -192,9 +192,9 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 48},
                 "targets": [
-                  {"expr": "hikaricp_connections_active{job=\"baro-dispatch-service\"}", "legendFormat": "active"},
-                  {"expr": "hikaricp_connections_pending{job=\"baro-dispatch-service\"}", "legendFormat": "pending"},
-                  {"expr": "hikaricp_connections_max{job=\"baro-dispatch-service\"}", "legendFormat": "max"}
+                  {"expr": "hikaricp_connections_active{job=\"baro-dispatch-service\"}", "legendFormat": "active ({{instance}})"},
+                  {"expr": "hikaricp_connections_pending{job=\"baro-dispatch-service\"}", "legendFormat": "pending ({{instance}})"},
+                  {"expr": "hikaricp_connections_max{job=\"baro-dispatch-service\"}", "legendFormat": "max ({{instance}})"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
               },
@@ -205,7 +205,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 0, "y": 56},
                 "targets": [
-                  {"expr": "sum(rate(jvm_gc_pause_seconds_sum{job=\"baro-dispatch-service\"}[1m]))", "legendFormat": "gc pause seconds/s"},
+                  {"expr": "sum(rate(jvm_gc_pause_seconds_sum{job=\"baro-dispatch-service\"}[$__rate_interval]))", "legendFormat": "gc pause seconds/s"},
                   {"expr": "max(jvm_gc_pause_seconds_max{job=\"baro-dispatch-service\"})", "legendFormat": "gc pause max"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
@@ -217,7 +217,7 @@ grafana:
                 "datasource": {"type": "prometheus", "uid": "$datasource"},
                 "gridPos": {"h": 8, "w": 12, "x": 12, "y": 56},
                 "targets": [
-                  {"expr": "sum by (uri) (rate(http_server_requests_seconds_sum{job=\"baro-dispatch-service\"}[1m])) / sum by (uri) (rate(http_server_requests_seconds_count{job=\"baro-dispatch-service\"}[1m]))", "legendFormat": "{{uri}} avg"}
+                  {"expr": "sum by (uri) (rate(http_server_requests_seconds_sum{job=\"baro-dispatch-service\"}[$__rate_interval])) / sum by (uri) (rate(http_server_requests_seconds_count{job=\"baro-dispatch-service\"}[$__rate_interval]))", "legendFormat": "{{uri}} avg"}
                 ],
                 "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
               }
