@@ -25,6 +25,12 @@ variable "blackbox_exporter_chart_version" {
   default     = "11.12.0"
 }
 
+variable "kafka_exporter_chart_version" {
+  description = "prometheus-kafka-exporter chart version"
+  type        = string
+  default     = "3.1.0"
+}
+
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
@@ -89,6 +95,30 @@ variable "ec2_node_exporter_targets" {
       role   = "mosquitto"
     }
   ]
+}
+
+variable "kafka_exporter_kafka_servers" {
+  description = "Kafka bootstrap servers observed by prometheus-kafka-exporter"
+  type        = list(string)
+  default     = ["kafka.baro.internal:9092"]
+}
+
+variable "kafka_exporter_topic_filter" {
+  description = "Kafka topic regex collected by prometheus-kafka-exporter"
+  type        = string
+  default     = "vehicle-data-topic"
+}
+
+variable "kafka_exporter_group_filter" {
+  description = "Kafka consumer group regex collected by prometheus-kafka-exporter"
+  type        = string
+  default     = "dispatch-service"
+}
+
+variable "kafka_jmx_exporter_targets" {
+  description = "Kafka broker JMX exporter targets reachable from the monitoring cluster through VPN"
+  type        = list(string)
+  default     = ["10.20.10.31:9404"]
 }
 
 # ──────────────────────────────────────

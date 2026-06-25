@@ -1098,6 +1098,16 @@ prometheus:
               domain: ec2
               ec2_role: ${target.role}
 %{ endfor ~}
+      - job_name: baro-kafka-jmx-exporter
+        static_configs:
+          - targets:
+%{ for target in kafka_jmx_exporter_targets ~}
+              - ${target}
+%{ endfor ~}
+            labels:
+              source: aws
+              domain: kafka
+              ec2_role: kafka
     nodeSelector:
       role: monitoring
     resources:

@@ -1,0 +1,118 @@
+grafana:
+  dashboards:
+    baro:
+      kafka-load-test:
+        json: |
+          {
+            "uid": "baro-kafka-load-test",
+            "title": "Baro Kafka Load Test",
+            "tags": ["baro", "kafka", "load-test", "dev"],
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "15s",
+            "time": {"from": "now-1h", "to": "now"},
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "current": {"text": "Prometheus", "value": "prometheus"}
+                }
+              ]
+            },
+            "panels": [
+              {
+                "id": 1,
+                "type": "timeseries",
+                "title": "Kafka Messages In / sec",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+                "targets": [
+                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_messagesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"vehicle-data-topic\"}[2m]))", "legendFormat": "vehicle-data-topic messages/s"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+              },
+              {
+                "id": 2,
+                "type": "timeseries",
+                "title": "Kafka Bytes In / sec",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+                "targets": [
+                  {"expr": "sum(rate(kafka_server_brokertopicmetrics_bytesinpersec_total{job=\"baro-kafka-jmx-exporter\",topic=\"vehicle-data-topic\"}[2m]))", "legendFormat": "vehicle-data-topic bytes/s"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
+              },
+              {
+                "id": 3,
+                "type": "timeseries",
+                "title": "Dispatch Consumer Lag Total",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                "targets": [
+                  {"expr": "sum(kafka_consumergroup_lag{topic=\"vehicle-data-topic\",consumergroup=\"dispatch-service\"})", "legendFormat": "dispatch-service lag"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1000}, {"color": "red", "value": 10000}]}}, "overrides": []}
+              },
+              {
+                "id": 4,
+                "type": "timeseries",
+                "title": "Dispatch Consumer Lag by Partition",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+                "targets": [
+                  {"expr": "kafka_consumergroup_lag{topic=\"vehicle-data-topic\",consumergroup=\"dispatch-service\"}", "legendFormat": "partition {{partition}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+              },
+              {
+                "id": 5,
+                "type": "timeseries",
+                "title": "Kafka EC2 CPU / Disk Usage",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+                "targets": [
+                  {"expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",mode=\"idle\"}[1m])))", "legendFormat": "node cpu"},
+                  {"expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"} / node_filesystem_size_bytes{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",fstype!~\"tmpfs|overlay|squashfs|ramfs|nsfs\",mountpoint!~\"/dev.*|/proc.*|/run.*|/sys.*\"}))", "legendFormat": "disk {{mountpoint}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []}
+              },
+              {
+                "id": 6,
+                "type": "timeseries",
+                "title": "Kafka EC2 Network",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+                "targets": [
+                  {"expr": "sum(rate(node_network_receive_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[1m]))", "legendFormat": "rx"},
+                  {"expr": "sum(rate(node_network_transmit_bytes_total{job=\"baro-ec2-node-exporter\",ec2_role=\"kafka\",device!~\"lo|docker.*|veth.*|br.*\"}[1m]))", "legendFormat": "tx"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []}
+              },
+              {
+                "id": 7,
+                "type": "timeseries",
+                "title": "Dispatch Service CPU / Memory",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+                "targets": [
+                  {"expr": "avg(aws_ecs_cpuutilization_average{service_name=~\".*dispatch.*\"})", "legendFormat": "dispatch cpu"},
+                  {"expr": "avg(aws_ecs_memory_utilization_average{service_name=~\".*dispatch.*\"})", "legendFormat": "dispatch memory"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []}
+              },
+              {
+                "id": 8,
+                "type": "timeseries",
+                "title": "Scrape Health",
+                "datasource": {"type": "prometheus", "uid": "$datasource"},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+                "targets": [
+                  {"expr": "up{job=~\"baro-kafka-jmx-exporter|baro-ec2-node-exporter|kafka-exporter.*\"}", "legendFormat": "{{job}} {{instance}}"}
+                ],
+                "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+              }
+            ]
+          }
