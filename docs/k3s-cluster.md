@@ -54,8 +54,8 @@ Airflow는 metadata DB로 TimescaleDB를 사용하므로 Terraform에서 `depend
 - Grafana admin password는 Terraform sensitive variable로 주입
 - cloudwatch-exporter AWS 자격 증명은 Kubernetes Secret `monitoring/cloudwatch-exporter-aws-credentials`로 주입합니다.
 - Secret data key는 chart template 기준 `access_key`, `secret_key`를 사용합니다.
-- blackbox-exporter는 `http_2xx`, `tcp_connect` 모듈을 사용합니다. 실제 probe target은 `helm-values/blackbox-exporter.yaml`에서 endpoint 확정 후 추가합니다.
-- 기존 Prometheus/Grafana 설정은 변경하지 않고 exporter Helm release만 추가합니다.
+- blackbox-exporter는 `http_2xx`, `tcp_connect` 모듈을 사용합니다. 현재 public gateway, internal actuator endpoint, control/dispatch health endpoint, Kafka TCP target을 `helm-values/blackbox-exporter.yaml`에서 감시합니다.
+- Service health와 CircuitBreaker 지표는 `Baro Service Observability` 대시보드와 `#baro-service-alert` Slack 채널로 확인합니다.
 
 ## TimescaleDB
 
@@ -137,7 +137,7 @@ K3s Helm release는 [`terraform/k3s`](../terraform/k3s)에서 관리합니다.
       kubectl -n monitoring create secret generic alertmanager-service-slack-webhook \
         --from-literal=webhook_url='<SERVICE_SLACK_INCOMING_WEBHOOK_URL>'
      ```
-2. `helm-values/blackbox-exporter.yaml`의 `serviceMonitor.targets`에 실제 public/internal health endpoint와 Kafka TCP target을 추가합니다.
+2. `helm-values/blackbox-exporter.yaml`의 `serviceMonitor.targets`에서 public/internal health endpoint와 Kafka TCP target이 현재 환경과 일치하는지 확인합니다.
 3. `terraform/k3s`에서 `terraform fmt -recursive` 후 `terraform init`, `terraform validate`를 실행합니다.
 4. 적용 후 Prometheus `/targets`, `/graph`에서 cloudwatch/blackbox metric 수집 여부를 확인합니다.
 5. Prometheus `/rules`에서 `baro.dev.aws.*` 알람 룰이 로드되었는지 확인합니다.
